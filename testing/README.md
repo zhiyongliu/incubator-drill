@@ -2,7 +2,6 @@
 
 ## Structure of test resources tree:
 
-{
 testing
   |_ drilltests
      |_ resources
@@ -13,7 +12,6 @@ testing
            |_ testcase1.q <- this is the raw sql query file
            |_ testcase1.e_tsv <- this is the expected result set.  tsv indicates the format.
            |_ testcase1.json <- this is the test case definition file
-}
 
 
 ## Steps:
@@ -31,7 +29,6 @@ The expected file is assumed to contain the same result sets as what will be ret
 
 The .json test definition file looks like the following:
 
-{
     "testId": "select",
     "type": "individual",
     "description": "Test sending the select query via submit_plan",
@@ -51,7 +48,6 @@ The .json test definition file looks like the following:
     ],
     "datasources": [
     ]
-}
 
 "categories" is a list of tags that a test may belong to.
 
