@@ -1,6 +1,6 @@
-Instructions for running drill tests under the Apache drill test framework
+# Instructions for running drill tests under the Apache drill test framework
 
-Structure of test resources tree:
+## Structure of test resources tree:
 testing
   |_ drilltests
      |_ resources
@@ -13,11 +13,16 @@ testing
            |_ testcase1.json <- this is the test case definition file
 
 
+## Steps:
+
 1. cd testing/drilltests/resources.
 2. (Optional) Create a test group directory.
 3. (Optional) Create datasources directory.
 4. (Optional) Create testcases and testcase1 directories.
 5. In the same directory, create the .q, .e and .json files.  These files must be in the same directory.
+
+
+## Explanations of the files:
 
 The expected file is assumed to contain the same result sets as what will be returned by the drill test execution.
 
@@ -74,6 +79,9 @@ The .json test definition file looks like the following:
     ]
 
 Here, there are two ways to populate data.  The first one is to "cp", which does a simple cp of a small data file directly to the destination.  The second one runs user-defined scripts, with customized parameters including destinations.  If datasources are specified, the test framework will pick up the src file(s) and execute the actions accordingly.
+
+
+## Executing tests:
 
 To run a test, execute the following command in the drilltests directory:
 
