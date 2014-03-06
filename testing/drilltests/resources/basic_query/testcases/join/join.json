@@ -1,0 +1,27 @@
+{
+    "testId": "alias",
+    "type": "individual",
+    "description": "Test sending the alias query via sqlline CLI",
+    "categories": [
+        "smoke",
+        "failed"
+    ],
+    "matrices": [
+        {
+            "query-file": "basic_query/testcases/alias/alias.q",
+            "schema": "parquet",
+            "output-format": "tsv",
+            "expected-file": "basic_query/testcases/alias/alias.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "basic_query/datasources/nation.parquet",
+            "dest": "nation.parquet"
+        }
+    ]
+}
