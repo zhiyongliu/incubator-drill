@@ -9,9 +9,9 @@
             |_ datasources <- this is where small datasources or data generation tools reside
             |_ testcases
                |_ testcase1
-               |_ testcase1.q <- this is the raw sql query file
-               |_ testcase1.e_tsv <- this is the expected result set.  tsv indicates the format.
-               |_ testcase1.json <- this is the test case definition file
+                 |_ testcase1.q <- this is the raw sql query file
+                 |_ testcase1.e_tsv <- this is the expected result set.  tsv indicates the format.
+                 |_ testcase1.json <- this is the test case definition file
 
 ## Steps:
 
