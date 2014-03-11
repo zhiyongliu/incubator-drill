@@ -48,7 +48,7 @@ public class DrillTestNGListener extends TestListenerAdapter {
 
   @Override
   public void onTestSuccess(ITestResult tr) {
-    LOG.info(tr.getName() + " Succeed");
+    LOG.info(tr.getName() + " Succeeded");
   }
 
   @Override

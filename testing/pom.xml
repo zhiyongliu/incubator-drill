@@ -75,6 +75,13 @@
 			<version>${mapr.hadoop.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.apache.drill</groupId>
+			<artifactId>drill-sqlparser</artifactId>
+			<version>${drill.version}</version>
+			<scope>system</scope>
+			<systemPath>/Volumes/DRIVE01/data/workspace302/drill-jars/drill-sqlparser-1.0.0-m2-incubating-SNAPSHOT.jar</systemPath>
+		</dependency>
 		<!-- <dependency> <groupId>org.apache.drill</groupId> <artifactId>drill-root</artifactId> 
 			<version>${drill.version}</version> </dependency> -->
 	</dependencies>

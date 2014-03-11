@@ -29,6 +29,8 @@ public class TestCaseModeler {
   private String testId;
   private String type;
   private String description;
+  private String submitType = "sqlline";
+  private String queryType = "raw";
   private List<String> categories;
   private List<TestMatrix> matrices;
   private List<DataSource> datasources;
@@ -60,6 +62,30 @@ public class TestCaseModeler {
     this.datasources = datasources;
   }
 
+  /**
+   * Constructor with various fields.
+   * 
+   * @param testId
+   * @param type
+   * @param description
+   * @param submitType
+   * @param queryType
+   * @param categories
+   * @param matrices
+   * @param datasources
+   */
+  public TestCaseModeler(String testId, String type, String description,
+      String submitType, String queryType, List<String> categories,
+      List<TestMatrix> matrices, List<DataSource> datasources) {
+    this(testId, type, description, categories, matrices, datasources);
+    if (submitType != null) {
+      this.submitType = submitType;
+    }
+    if (queryType != null) {
+      this.queryType = queryType;
+    }
+  }
+
   public String getTestId() {
     return testId;
   }
@@ -70,6 +96,14 @@ public class TestCaseModeler {
 
   public String getDescription() {
     return description;
+  }
+
+  public String getSubmitType() {
+    return submitType;
+  }
+
+  public String getQueryType() {
+    return queryType;
   }
 
   public List<String> getCategories() {
@@ -86,8 +120,8 @@ public class TestCaseModeler {
 
   public String toString() {
     String result = "Test Id: " + testId + "\nTest Type: " + type
-        + "\nTest Description: " + description + "\nTest Categories: "
-        + categories;
+        + "\nTest Description: " + description + "\nSubmit Type: " + submitType
+        + "\nQuery Type: " + queryType + "\nTest Categories: " + categories;
     for (TestMatrix matrix : matrices) {
       result += "\n" + matrix.toString();
     }

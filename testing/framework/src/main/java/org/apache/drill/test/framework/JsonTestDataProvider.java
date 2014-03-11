@@ -69,9 +69,9 @@ public class JsonTestDataProvider {
     } catch (Exception e) {
       throw new RuntimeException("Error getting json test definition sources.");
     }
-    String[] groups = null;
+    String[] testGroups = null;
     try {
-      groups = System.getProperty("test.groups").split(",");
+      testGroups = System.getProperty("test.groups").split(",");
     } catch (Exception e) {
       LOG.info("Test groups not specified.  Will run all collected tests.");
     }
@@ -85,24 +85,34 @@ public class JsonTestDataProvider {
       for (File testDefFile : testDefFiles) {
         processor = new JsonTestDataProcessor(testDefFile.getAbsolutePath());
         String type = processor.getSimpleTestParameter("type");
+        List<String> categories = processor.getListTestParameter("categories");
         if (type.equals("individual")) {
-          if (groups == null) {
+          if (testGroups == null) {
             data.add(new Object[] { processor.constructTestCaseModeler() });
             continue;
           }
-          List<String> categories = processor
-              .getListTestParameter("categories");
-          for (String group : groups) {
+          for (String group : testGroups) {
             if (categories.contains(group)) {
               data.add(new Object[] { processor.constructTestCaseModeler() });
             }
           }
         } else if (type.equals("group")) {
+          boolean foundTests = false;
+          for (String group : testGroups) {
+            if (testGroups != null && !categories.contains(group)) {
+              continue;
+            } else {
+              foundTests = true;
+            }
+          }
+          if (!foundTests) {
+            continue;
+          }
           String queryFileExtension = processor
               .constructTestMatrices(null, null).get(0).getInputFile();
           String expectedFileExtension = processor
               .constructTestMatrices(null, null).get(0).getExpectedFile();
-          List<File> testQueryFiles = searchFiles(testDefSourceFile,
+          List<File> testQueryFiles = searchFiles(testDefFile.getParentFile(),
               queryFileExtension);
           for (File testQueryFile : testQueryFiles) {
             String expectedFileName = getExpectedFile(
@@ -117,12 +127,15 @@ public class JsonTestDataProvider {
         }
       }
     }
+    if (data.size() == 0) {
+      LOG.warn("Warning: No test cases have been collected.");
+    }
     return data.iterator();
   }
 
-  private static List<File> searchFiles(File root, String target) {
+  private static List<File> searchFiles(File root, String regex) {
     List<File> list = new ArrayList<File>();
-    Pattern pattern = Pattern.compile(target + "$");
+    Pattern pattern = Pattern.compile(regex + "$");
     Matcher matcher = null;
     if (root.isFile()) {
       matcher = pattern.matcher(root.getName());
@@ -132,7 +145,7 @@ public class JsonTestDataProvider {
       }
     } else {
       for (File file : root.listFiles()) {
-        list.addAll(searchFiles(file, target));
+        list.addAll(searchFiles(file, regex));
       }
     }
     return list;

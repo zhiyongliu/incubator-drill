@@ -17,7 +17,14 @@
  */
 package org.apache.drill.test.framework;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 import org.apache.log4j.Logger;
 
@@ -29,7 +36,8 @@ import org.apache.log4j.Logger;
  * 
  */
 public class DrillQueryDispatcher implements QueryDispatcher {
-  private static final Logger LOG = Logger.getLogger(Utils.getInvokingClassName());
+  private static final Logger LOG = Logger.getLogger(Utils
+      .getInvokingClassName());
   private String schema;
 
   /**
@@ -65,10 +73,30 @@ public class DrillQueryDispatcher implements QueryDispatcher {
    * 
    */
   public void dispatchQueriesSubmitPlan(String submitPlanCommand,
-      String filename, String planType) throws Exception {
-    String command = submitPlanCommand + " -f " + filename + " - t " + planType
-        + " -zk " + "";
+      String queryFileName, String queryType) throws Exception {
+    String command = submitPlanCommand + " -f " + queryFileName + " -t "
+        + queryType + " -zk "
+        + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     LOG.info("Executing " + command + ".");
     Runtime.getRuntime().exec(command).waitFor();
+  }
+
+  public ResultSet dispatchQueriesJDBC(String connectionUrl,
+      String queryFileName) throws Exception {
+    Connection connection = DriverManager.getConnection(connectionUrl);
+    Statement statement = connection.createStatement();
+    return statement.executeQuery(getSqlStatement(queryFileName));
+  }
+
+  private String getSqlStatement(String queryFileName) throws IOException {
+    StringBuilder builder = new StringBuilder();
+    BufferedReader reader = new BufferedReader(new FileReader(new File(
+        queryFileName)));
+    String line = null;
+    while ((line = reader.readLine()) != null && !line.trim().isEmpty()) {
+      builder.append(line);
+    }
+    reader.close();
+    return builder.toString();
   }
 }

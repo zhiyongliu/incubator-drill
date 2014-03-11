@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
  */
 public class DrillTestsMapRCluster extends DrillTestBase {
   @Test(dataProviderClass = JsonTestDataProvider.class, dataProvider = "jsonTestDataProvider")
-  public void drillPositiveTests(TestCaseModeler modeler) throws Exception {
+  public void commandlinePositiveTests(TestCaseModeler modeler) throws Exception {
     LOG.debug(modeler);
     runTest(modeler);
   }

@@ -152,7 +152,7 @@ public class InputQueryFileHandler {
       BufferedReader reader = new BufferedReader(new FileReader(
           inputFileNames[i]));
       String line = "";
-      while ((line = reader.readLine()) != null) {
+      while ((line = reader.readLine()) != null && line.length() > 0) {
         writer.write(line);
         writer.newLine();
         builder.append(line + "\n");

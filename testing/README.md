@@ -1,5 +1,18 @@
 # Instructions for running drill tests under the Apache drill test framework
 
+## Setup and configurations:
+In the file framework/src/main/resources/drillTestConfig.properties, configure test environment as needed:
+  DRILL_HOME is where drill is installed.
+  DRILL_TEST_DATA_DIR points to the parent directory of the drill test data.  If a relative path is provided, it is expected to be under drilltests.
+  CLUSTER_NAME is name of cluster (this is currently for logging purposes).
+  HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
+  DRILL_TESTDATA specifies path to the distributed system where data is to be populated.
+  ZOOKEEPERS is a list of zookeepers in the cluster.
+
+Add maven dependencies required by the project, if necessary.
+
+cd to the testing directory, and execute mvn clean install.
+
 ## Structure of test resources tree:
 
     testing
@@ -10,7 +23,7 @@
             |_ testcases
                |_ testcase1
                  |_ testcase1.q <- this is the raw sql query file
-                 |_ testcase1.e_tsv <- this is the expected result set.  tsv indicates the format.
+                 |_ testcase1.e_tsv <- this is the expected result set; tsv indicates the format
                  |_ testcase1.json <- this is the test case definition file
 
 ## Steps:
@@ -24,7 +37,7 @@
 
 ## Explanations of the files:
 
-The expected file is assumed to contain the same result sets as what will be returned by the drill test execution.
+The expected file contains the target result sets that actual results returned by drill test execution are to be compared with.
 
 The .json test definition file looks like the following:
 
@@ -62,11 +75,11 @@ The .json test definition file looks like the following:
 
 "expected-file": specifies where the .e file is, relative to the resources directory.  An absolute path can also be specified, starting with '/'.
 
-"verification-type" picks the verification method to use.  For small result sets, in-memory will be used for record-by-record verification.  For large data, we will implement a map-reduce method for verification.
+"verification-type" picks which verification method(s) to use.  For small result sets, in-memory will be used for record-by-record verification.  For large data, we will implement a map-reduce method for verification.  If the list is left empty, no verifications will be performed for the test.
 
 "matrices" is a list, so multiple queries can be submitted as a batch.
 
-"datasources" contains information regarding how data sources are created and stored.  In the above example, it is an empty list, in which case, it is assumed that the data sources needed are already in place.  If you want to populate data at runtime, use the following format:
+"datasources" contains information regarding how data sources are created and stored.  In the above example, it is an empty list, in which case it is assumed that the data sources needed are already in place.  If you want to populate data at runtime, use the following format:
 
     "datasources": [
         {
@@ -80,12 +93,15 @@ The .json test definition file looks like the following:
         }
     ]
 
-Here, there are two ways to populate data.  The first one is to "cp", which does a simple cp of a small data file directly to the destination.  The second one runs user-defined scripts, with customized parameters including destinations.  If datasources are specified, the test framework will pick up the src file(s) and execute the actions accordingly.
+Here, there are two ways to populate data.  The first one is "cp", which does a simple copy of a small data file directly to the destination.  The second one runs user-defined scripts, with customized parameters including destinations.  If datasources are specified, the test framework will pick up the src file(s) and execute the actions accordingly.
 
 
 ## Executing tests:
 
 To run a test, execute the following command in the drilltests directory:
 
-mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#drillPositiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
+    mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#drillPositiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
 
+A wrapping script is also provided, so that you can execute tests using this command:
+
+    ./runtests.sh commandlinePositiveTests basic_query/testcases/select/select.json smoke

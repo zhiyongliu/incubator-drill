@@ -194,7 +194,17 @@ public class JsonTestDataProcessor {
     String description = getSimpleTestParameter("description");
     List<String> categories = getListTestParameter("categories");
     List<TestCaseModeler.DataSource> datasources = constructTestDataSources();
-    return new TestCaseModeler(testId, type, description, categories, matrices,
-        datasources);
+    String submitType = null;
+    String queryType = null;
+    try {
+      submitType = getSimpleTestParameter("submit-type");
+    } catch (JSONException e) {
+    }
+    try {
+      queryType = getSimpleTestParameter("query-type");
+    } catch (JSONException e) {
+    }
+    return new TestCaseModeler(testId, type, description, submitType,
+        queryType, categories, matrices, datasources);
   }
 }

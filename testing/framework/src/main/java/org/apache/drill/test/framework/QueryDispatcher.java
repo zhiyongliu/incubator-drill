@@ -18,6 +18,7 @@
 package org.apache.drill.test.framework;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 
 /**
  * Interface providing methods to dispatch queries on a heterogeneous hadoop
@@ -43,10 +44,19 @@ public interface QueryDispatcher {
   /**
    * 
    * @param command
-   * @param filename
+   * @param queryFileName
    * @param planType
    * @throws Exception
    */
-  public void dispatchQueriesSubmitPlan(String command, String filename,
-      String planType) throws Exception;
+  public void dispatchQueriesSubmitPlan(String command, String queryFileName,
+      String queryType) throws Exception;
+
+  /**
+   * 
+   * @param connectionUrl
+   * @param queryFileName
+   * @throws Exception
+   */
+  public ResultSet dispatchQueriesJDBC(String connectionUrl,
+      String queryFileName) throws Exception;
 }

@@ -1,10 +1,11 @@
 {
     "testId": "alias",
     "type": "individual",
-    "description": "Test sending the alias query via sqlline CLI",
+    "description": "Test sending the alias query via submit_plan",
+    "submit-type": "submit_plan",
+    "query-type": "logical",
     "categories": [
-        "smoke",
-        "failed"
+        "smoke"
     ],
     "matrices": [
         {

@@ -2,8 +2,9 @@
     "testId": "select",
     "type": "individual",
     "description": "Test sending the select query via submit_plan",
+    "submit-type": "jdbc",
     "categories": [
-        "smoke"
+        "smoke",
     ],
     "matrices": [
         {

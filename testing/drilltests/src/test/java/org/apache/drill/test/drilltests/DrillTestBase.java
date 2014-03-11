@@ -18,7 +18,8 @@
 package org.apache.drill.test.drilltests;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -60,7 +61,10 @@ public abstract class DrillTestBase {
       .get("DRILL_TEST_DATA_DIR");
   protected static String SQLLINE_COMMAND = drillProperties.get("DRILL_HOME")
       + "/bin/sqlline";
+  protected static String SUBMIT_PLAN_COMMAND = drillProperties
+      .get("DRILL_HOME") + "/bin/submit_plan";
   public static final String CLUSTER_NAME = drillProperties.get("CLUSTER_NAME");
+  private static final String DRIVER_URL = "jdbc:drill:zk=local";
   protected static final String SMOKE_GROUP = "smoke";
   protected static final String REGRESSION_GROUP = "smoke";
 
@@ -92,7 +96,8 @@ public abstract class DrillTestBase {
     }
     List<TestCaseModeler.DataSource> datasources = modeler.getDatasources();
     prepareData(datasources);
-    testProcess(modeler.getTestId(), modeler.getDescription(), inputFileNames,
+    testProcess(modeler.getTestId(), modeler.getDescription(),
+        modeler.getSubmitType(), modeler.getQueryType(), inputFileNames,
         outputFormats, expectedFiles, schemas, verificationTypes);
   }
 
@@ -108,10 +113,10 @@ public abstract class DrillTestBase {
     }
   }
 
-  private void testProcess(String testId, String testDesc,
-      String[] inputFileNames, String[] outputFormats, String[] expectedFiles,
-      String[] schemas, String[] verificationTypes) throws IOException,
-      InterruptedException, NoSuchAlgorithmException {
+  private void testProcess(String testId, String testDesc, String submitType,
+      String queryType, String[] inputFileNames, String[] outputFormats,
+      String[] expectedFiles, String[] schemas, String[] verificationTypes)
+      throws Exception {
     logTestStart(testId, testDesc);
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
@@ -120,16 +125,36 @@ public abstract class DrillTestBase {
     LOG.info("Submitting queries:\n" + queries);
     dispatcher = new DrillQueryDispatcher(schemas[0]);
     Date date1 = new Date();
+    ResultSet[] resultSets = new ResultSet[inputFileNames.length];
     LOG.info("Query dispatch start time: " + dateFormat.format(date1));
-    dispatcher.dispatchQueriesCLI(SQLLINE_COMMAND, CONGREGATED_FILENAME);
+    if (submitType.equals("sqlline")) {
+      dispatcher.dispatchQueriesCLI(SQLLINE_COMMAND, CONGREGATED_FILENAME);
+    } else {
+      for (int i = 0; i < inputFileNames.length; i++) {
+        if (submitType.equals("submit_plan")) {
+          // TODO details of the implementation depends on how submit_plan works
+          dispatcher.dispatchQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
+              inputFileNames[i], queryType);
+        } else if (submitType.equals("jdbc")) {
+          resultSets[i] = dispatcher.dispatchQueriesJDBC(DRIVER_URL,
+              inputFileNames[i]);
+        }
+      }
+    }
     Date date2 = new Date();
     LOG.info("Query dispatch end time: " + dateFormat.format(date2));
     LOG.info("The execution time for the query: "
         + Utils.getDateDiff(date2, date1, "second") + " seconds.");
-    boolean verified = verifyAll(expectedFiles, outputFileNames,
-        verificationTypes);
-    LOG.debug("Actual query result:\n"
-        + DrillTestVerifier.getQueryOutputString());
+    boolean verified = false;
+    if (submitType.equals("sqlline")) {
+      verified = verifySqllineSubmitType(expectedFiles, outputFileNames,
+          verificationTypes);
+    } else if (submitType.equals("submit_plan")) {
+      // TODO
+    } else if (submitType.equals("jdbc")) {
+      verified = verifyJdbcSubmitType(expectedFiles, resultSets,
+          verificationTypes);
+    }
     logTestEnd(testId, verified);
   }
 
@@ -146,21 +171,18 @@ public abstract class DrillTestBase {
     return outputFileNames;
   }
 
-  private boolean verifyAll(String[] expectedOutputs, String[] actualOutputs,
-      String[] verificationTypes) throws NoSuchAlgorithmException, IOException,
+  private boolean verifySqllineSubmitType(String[] expectedOutputs,
+      String[] actualOutputs, String[] verificationTypes) throws IOException,
       InterruptedException {
     if (verificationTypes[0].equals("none")) {
       return true;
     }
     boolean verified = true;
     for (int i = 0; i < expectedOutputs.length; i++) {
-      verified = verified
-          && DrillTestVerifier.verify(expectedOutputs[i], actualOutputs[i],
-              handler.getHeadSizes()[i]);
-      if (verificationTypes.equals("in-memory")) {
+      if (verificationTypes[0].equals("in-memory")) {
         verified = verified
-            || DrillTestVerifier.inMemoryVerify(expectedOutputs[i],
-                actualOutputs[i]);
+            && DrillTestVerifier.fileComparisonVerify(expectedOutputs[i],
+                actualOutputs[i], handler.getHeadSizes()[i]);
       } else {
         verified = verified
             || DrillTestVerifier.mapReduceVerify(expectedOutputs[i],
@@ -171,6 +193,20 @@ public abstract class DrillTestBase {
       }
     }
     return true;
+  }
+
+  private boolean verifyJdbcSubmitType(String[] expectedFiles,
+      ResultSet[] resultSets, String[] verificationTypes) throws IOException,
+      SQLException {
+    if (verificationTypes[0].equals("none")) {
+      return true;
+    }
+    boolean verified = true;
+    for (int i = 0; i < expectedFiles.length; i++) {
+      verified = verified
+          && DrillTestVerifier.resultSetVerify(expectedFiles[i], resultSets[i]);
+    }
+    return verified;
   }
 
   abstract protected Cluster getCluster();
