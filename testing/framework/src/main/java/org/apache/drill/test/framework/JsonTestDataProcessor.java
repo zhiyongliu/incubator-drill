@@ -164,7 +164,8 @@ public class JsonTestDataProcessor {
       JSONObject item = (JSONObject) jsonArray.get(i);
       list.add(new TestCaseModeler().new DataSource(item.getString("mode"),
           Utils.toAbsolutePath(item.getString("src"), "DRILL_TEST_DATA_DIR"),
-          Utils.toAbsolutePath(item.getString("dest"), "DRILL_TESTDATA")));
+          item.getString("dest") == null ? "" : Utils.toAbsolutePath(
+              item.getString("dest"), "DRILL_TESTDATA")));
     }
     return list;
   }
@@ -189,11 +190,24 @@ public class JsonTestDataProcessor {
    */
   public TestCaseModeler constructTestCaseModeler(
       List<TestCaseModeler.TestMatrix> matrices) throws JSONException {
+    return constructTestCaseModeler(matrices, constructTestDataSources());
+  }
+
+  /**
+   * Constructs a TestCaseModeler object.
+   * 
+   * @param matrices
+   *          list of TestCaseModeler.TestMatrix used in the construction.
+   * @return a TestCaseModeler object.
+   * @throws JSONException
+   */
+  public TestCaseModeler constructTestCaseModeler(
+      List<TestCaseModeler.TestMatrix> matrices,
+      List<TestCaseModeler.DataSource> datasources) throws JSONException {
     String testId = getSimpleTestParameter("testId");
     String type = getSimpleTestParameter("type");
     String description = getSimpleTestParameter("description");
     List<String> categories = getListTestParameter("categories");
-    List<TestCaseModeler.DataSource> datasources = constructTestDataSources();
     String submitType = null;
     String queryType = null;
     try {

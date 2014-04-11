@@ -2,12 +2,12 @@
 
 ## Setup and configurations:
 In the file framework/src/main/resources/drillTestConfig.properties, configure test environment as needed:
-  DRILL_HOME is where drill is installed.
-  DRILL_TEST_DATA_DIR points to the parent directory of the drill test data.  If a relative path is provided, it is expected to be under drilltests.
-  CLUSTER_NAME is name of cluster (this is currently for logging purposes).
-  HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
-  DRILL_TESTDATA specifies path to the distributed system where data is to be populated.
-  ZOOKEEPERS is a list of zookeepers in the cluster.
+1. DRILL_HOME is where drill is installed.
+2. DRILL_TEST_DATA_DIR points to the parent directory of the drill test data.  If a relative path is provided, it is expected to be under drilltests.
+3. CLUSTER_NAME is name of cluster (this is currently for logging purposes).
+4. HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
+5. DRILL_TESTDATA specifies path to the distributed system where data is to be populated.
+6. ZOOKEEPERS is a list of zookeepers in the cluster.
 
 Add maven dependencies required by the project, if necessary.
 
@@ -47,7 +47,7 @@ The .json test definition file looks like the following:
     "type": "individual",
     "description": "Test sending the select query via submit_plan",
     "categories": [
-        "smoke",
+        "smoke"
     ],
     "matrices": [
         {
@@ -100,8 +100,11 @@ Here, there are two ways to populate data.  The first one is "cp", which does a 
 
 To run a test, execute the following command in the drilltests directory:
 
-    mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#drillPositiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
+    mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#positiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
 
 A wrapping script is also provided, so that you can execute tests using this command:
 
-    ./runtests.sh commandlinePositiveTests basic_query/testcases/select/select.json smoke
+    ./runtests.sh -c positiveTests -s basic_query/testcases/select/select.json -g smoke
+    ./runtests.sh -c positiveTests -s amplab/jdbc -u jdbc:drill: -g smoke
+
+See the runtests.sh script for detailed usage.

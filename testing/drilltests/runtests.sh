@@ -1,37 +1,122 @@
-#!/bin/bash
+#!/bin/sh
 
-usage() {
-  echo 'usage:'
-  echo '    runtests.sh testCategory testDefSource [testGroups]'
-  echo ''
-  echo '  Valid values for testCategory:'
-  echo '      commandlinePositiveTests'
-  echo '      commandlineNegativeTests'
-  echo '      submitPlanPositveTests'
-  echo '      submitPlanNegtveTests'
-  echo '      jdbcPositiveTests'
-  echo '      jdbcNegativeTests'
-  echo ''
-  echo '  testDefSource - test definition file/directory.  Examples:'
-  echo '      basic_query/testcases/select/select.json'
-  echo '      /root/basic_query/testcases/select/select.json'
-  echo ''
-  echo '  testGroups - optional.  When not specified, all test groups will be executed.  Examples:'
-  echo '      smoke'
-  echo '      smoke,regression'
-  exit
+category=""
+defSources=""
+jdbcUrl=""
+groups=""
+
+#
+# functions
+#
+usage()
+{
+    echo >&2 "$1"
+
+    cat  << EOF
+
+$0 -c <category> [-s <defSources>] [-u <jdbcUrl>] [-g <groups>]
+
+    -c <category> : required
+    -s <defSources> : optional
+    -u <jdbcUrl> : optional
+    -g <groups> : optional
+
+    Valid values for category:
+      positiveTests
+      negativeTests
+
+    testDefSource - test definition file/directory.  If not provided, all tests under resources will run.  Examples:
+      basic_query/testcases/select/select.json
+      /root/basic_query/testcases/select/select.json
+
+    jdbcUrl - JDBC connection URL; required only when queries are submitted via JDBC.  Examples:
+      jdbc.drill:
+
+    testGroups - optional.  When not specified, all test groups will be executed.  Examples:
+      smoke
+      smoke,regression
+
+EOF
+    exit 1
 }
 
-if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]
-then
-  usage
+
+##
+## MAIN
+##
+if [ $# = 0 ]; then
+    usage "No arguements given"
 fi
 
-COMMAND="mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#$1 -Dtest.def.sources=$2"
+while [ $# -gt 0 ]; do
 
-if [ "$#" -eq 2 ]
-then
-  $COMMAND
-else
-  $COMMAND "-Dtest.groups=$3"
+    case $1 in
+        #
+        # category is required
+        #
+        -c) 
+            category=$2
+            shift
+            ;;
+
+        #
+        # defSources is optional 
+        #
+        -s)
+            defSources=$2
+            shift
+            ;;
+
+        #
+        # jdbcUrl is optional
+        #
+        -u)
+            jdbcUrl=$2
+            shift
+            ;;
+
+        #
+        # groups is optional
+        #
+        -g) 
+            groups=$2
+            shift
+            ;;
+
+        #
+        # invalid option
+        #
+        *)
+            usage "Invalid argument: $1"
+            ;;
+    esac
+    shift
+done
+
+#
+# check to see if category was set
+#
+if [ -z "$category" ]; then
+    usage "-c <category> is required"
 fi
+      
+#
+# run the command with the given arguments
+# 
+command="mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#$category"
+
+if [ -n "$defSources" ]; then
+    echo "getting defSource......."
+    command=$command" -Dtest.def.sources=$defSources"
+fi
+
+if [ -n "$jdbcUrl" ]; then
+    command=$command" -Djdbc.connection.url=$jdbcUrl"
+fi
+
+if [ -n "$groups" ]; then
+    command=$command" -Dtest.groups=$groups"
+fi
+
+echo "Running $command"
+$command

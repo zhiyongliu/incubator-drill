@@ -29,8 +29,8 @@ public class TestCaseModeler {
   private String testId;
   private String type;
   private String description;
-  private String submitType = "sqlline";
-  private String queryType = "raw";
+  private String submitType = "jdbc";
+  private String queryType = "sql";
   private List<String> categories;
   private List<TestMatrix> matrices;
   private List<DataSource> datasources;
@@ -120,13 +120,21 @@ public class TestCaseModeler {
 
   public String toString() {
     String result = "Test Id: " + testId + "\nTest Type: " + type
-        + "\nTest Description: " + description + "\nSubmit Type: " + submitType
-        + "\nQuery Type: " + queryType + "\nTest Categories: " + categories;
+        + "\nTest Description: " + description;
+    if (submitType != null) {
+      result += "\nSubmit Type: " + submitType;
+    }
+    if (queryType != null) {
+      result += "\nQuery Type: " + queryType;
+    }
+    result += "\nTest Categories: " + categories;
     for (TestMatrix matrix : matrices) {
       result += "\n" + matrix.toString();
     }
-    for (DataSource datasource : datasources) {
-      result += "\n" + datasource.toString();
+    if (datasources != null) {
+      for (DataSource datasource : datasources) {
+        result += "\n" + datasource.toString();
+      }
     }
     return result;
   }
@@ -227,8 +235,12 @@ public class TestCaseModeler {
     }
 
     public String toString() {
-      return "Data Sources: " + "\n\tMode: " + mode + "\n\tSource: " + source
-          + "\n\tDestination: " + destination;
+      String result = "Data Sources: " + "\n\tMode: " + mode + "\n\tSource: "
+          + source;
+      if (destination != null && destination.length() > 0) {
+        result += "\n\tDestination: " + destination;
+      }
+      return result;
     }
   }
 }

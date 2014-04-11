@@ -67,7 +67,7 @@ public class JsonTestDataProvider {
     try {
       testDefSources = System.getProperty("test.def.sources").split(",");
     } catch (Exception e) {
-      throw new RuntimeException("Error getting json test definition sources.");
+      testDefSources = new String[] { "" };
     }
     String[] testGroups = null;
     try {
@@ -91,18 +91,19 @@ public class JsonTestDataProvider {
             data.add(new Object[] { processor.constructTestCaseModeler() });
             continue;
           }
-          for (String group : testGroups) {
-            if (categories.contains(group)) {
+          for (String testGroup : testGroups) {
+            if (categories.contains(testGroup)) {
               data.add(new Object[] { processor.constructTestCaseModeler() });
             }
           }
         } else if (type.equals("group")) {
           boolean foundTests = false;
-          for (String group : testGroups) {
-            if (testGroups != null && !categories.contains(group)) {
+          for (String testGroup : testGroups) {
+            if (categories != null && !categories.contains(testGroup)) {
               continue;
             } else {
               foundTests = true;
+              break;
             }
           }
           if (!foundTests) {
@@ -114,6 +115,7 @@ public class JsonTestDataProvider {
               .constructTestMatrices(null, null).get(0).getExpectedFile();
           List<File> testQueryFiles = searchFiles(testDefFile.getParentFile(),
               queryFileExtension);
+          boolean checkDatasources = true;
           for (File testQueryFile : testQueryFiles) {
             String expectedFileName = getExpectedFile(
                 testQueryFile.getAbsolutePath(), queryFileExtension,
@@ -121,8 +123,14 @@ public class JsonTestDataProvider {
             List<TestCaseModeler.TestMatrix> matrices = processor
                 .constructTestMatrices(testQueryFile.getAbsolutePath(),
                     expectedFileName);
-            data.add(new Object[] { processor
-                .constructTestCaseModeler(matrices) });
+            if (checkDatasources) {
+              data.add(new Object[] { processor
+                  .constructTestCaseModeler(matrices) });
+              checkDatasources = false;
+            } else {
+              data.add(new Object[] { processor.constructTestCaseModeler(
+                  matrices, null) });
+            }
           }
         }
       }

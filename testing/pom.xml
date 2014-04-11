@@ -14,6 +14,23 @@
 		<module>drilltests</module>
 	</modules>
 
+	<repositories>
+		<repository>
+			<id>pentaho</id>
+			<name>Pentaho</name>
+			<url>http://repo.pentaho.org/artifactory/repo</url>
+			<layout>default</layout>
+			<releases>
+				<enabled>true</enabled>
+				<updatePolicy>daily</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+
 	<properties>
 		<testng.version>6.4</testng.version>
 		<log4j.version>1.2.17</log4j.version>
@@ -64,17 +81,31 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.mapr.hadoop</groupId>
-			<artifactId>maprfs-core</artifactId>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-core</artifactId>
 			<version>${mapr.hadoop.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.codehaus.jackson</groupId>
+					<artifactId>jackson-mapper-asl</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
-			<groupId>com.mapr.hadoop</groupId>
-			<artifactId>maprfs-jni</artifactId>
-			<version>${mapr.hadoop.version}</version>
+			<groupId>org.apache.drill</groupId>
+			<artifactId>distribution</artifactId>
+			<version>${drill.version}</version>
+			<type>pom</type>
 		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -96,7 +127,7 @@
 						<properties>
 							<property>
 								<name>listener</name>
-								<value>org.apache.drill.test.framework.DrillTestNGListener</value>
+								<value>org.apache.drill.test.framework.TestNGListener</value>
 							</property>
 						</properties>
 					</configuration>
