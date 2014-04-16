@@ -107,6 +107,7 @@ public class Utils {
     if (filename.startsWith("/")) {
       return filename;
     }
-    return Utils.getDrillTestProperties().get(propertyKey) + "/" + filename;
+    return System.getProperty("user.dir") + "/"
+        + Utils.getDrillTestProperties().get(propertyKey) + "/" + filename;
   }
 }

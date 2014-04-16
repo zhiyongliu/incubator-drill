@@ -46,6 +46,10 @@ import org.testng.Assert;
  * 
  */
 public abstract class DrillTestBase {
+  protected static final String TRACK_RESOURCES_HOME_LABEL = "TRACK_RESOURCES_HOME";
+  protected static final String START_RESRC_TRACKING_CMD_LABEL = "START_RESRC_TRACKING_CMD";
+  protected static final String STOP_RESRC_TRACKING_CMD_LABEL = "STOP_RESRC_TRACKING_CMD";
+  protected String trackingSessionUID = null;
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
   private InputQueryFileHandler handler = null;
@@ -55,14 +59,21 @@ public abstract class DrillTestBase {
       "yyyy/MM/dd HH:mm:ss.ssss");
   private static Map<String, String> drillProperties = Utils
       .getDrillTestProperties();
-  private static String SQLLINE_COMMAND = drillProperties.get("DRILL_HOME")
-      + "/bin/sqlline";
-  private static String SUBMIT_PLAN_COMMAND = drillProperties.get("DRILL_HOME")
-      + "/bin/submit_plan";
-  private static int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
+  private static final String SQLLINE_COMMAND = drillProperties
+      .get("DRILL_HOME") + "/bin/sqlline";
+  private static final String SUBMIT_PLAN_COMMAND = drillProperties
+      .get("DRILL_HOME") + "/bin/submit_plan";
+  private static final int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
   protected static final String CLUSTER_NAME = drillProperties
       .get("CLUSTER_NAME");
+  // [Kunal] Adding support for resource tracking
+  protected static final String TRACK_RESRC_HOME = drillProperties
+      .get(TRACK_RESOURCES_HOME_LABEL);
+  protected static final String START_RESRC_TRACKING_CMD = drillProperties
+      .get(START_RESRC_TRACKING_CMD_LABEL);
+  protected static final String STOP_RESRC_TRACKING_CMD = drillProperties
+      .get(STOP_RESRC_TRACKING_CMD_LABEL);
   private static String jdbcDriverUrl = null;
   static {
     Driver.load();
@@ -171,7 +182,10 @@ public abstract class DrillTestBase {
       verified = verified
           && verifySqllineSubmitType(expectedFiles, outputFileNames);
     } else if (submitType.equals("jdbc")) {
-      verified = verified && verifyJdbcSubmitType(expectedFiles, resultSets);
+      if (verificationTypes != null && verificationTypes.length != 0
+          && !verificationTypes[0].equalsIgnoreCase("none")) {
+        verified = verified && verifyJdbcSubmitType(expectedFiles, resultSets);
+      }
     }
     logTestEnd(testId, verified, timedOut);
   }
@@ -214,8 +228,7 @@ public abstract class DrillTestBase {
                   || verificationTypes[i].equalsIgnoreCase("none")) {
                 dispatcher.executeQueryJDBC(jdbcDriverUrl, inputFileNames[i]);
               }
-              resultSets.add(dispatcher.dispatchQueryJDBC(jdbcDriverUrl,
-                  inputFileNames[i]));
+              resultSets.add(dispatcher.dispatchQueryJDBC(inputFileNames[i]));
             }
           }
         }

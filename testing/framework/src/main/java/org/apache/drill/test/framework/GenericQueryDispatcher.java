@@ -76,19 +76,29 @@ public class GenericQueryDispatcher {
   /**
    * Submits query via JDBC
    * 
-   * @param connectionUrl
-   *          connection URL to use
    * @param queryFileName
    *          name of query file
-   * @return ResultSet containing query results
+   * @return Map of query results and their occurrences
    * @throws Exception
    */
-  public Map<String, Integer> dispatchQueryJDBC(String connectionUrl,
-      String queryFileName) throws Exception {
+  public Map<String, Integer> dispatchQueryJDBC(String queryFileName)
+      throws Exception {
     Connection connection = null;
     Statement statement = null;
     ResultSet resultSet = null;
     Map<String, Integer> map = new HashMap<String, Integer>();
+    String connectionUrl = "";
+    try {
+      connectionUrl = System.getProperty("jdbc.connection.url");
+      LOG.info("JDBC driver URL is " + connectionUrl);
+    } catch (Exception e) {
+      LOG.warn("No JDBC connection URL found.  This value is required "
+          + "if queries are submitted via JDBC.");
+    }
+
+    // will uncomment these lines with schema bug is fixed
+    // String connectionUrl = "jdbc:drill:schema=" + schema + ";zk="
+    // + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     try {
       connection = DriverManager.getConnection(connectionUrl);
       statement = connection.createStatement();
@@ -147,12 +157,13 @@ public class GenericQueryDispatcher {
    * @param queryFileName
    * @return
    */
+  // TODO get rid of connectionUrl; similar to dispatchQueryJDBC()
   public boolean executeQueryJDBC(String connectionUrl, String queryFileName) {
     boolean status = true;
     Connection connection = null;
     Statement statement = null;
     ResultSet resultSet = null;
-    long startTime = System.currentTimeMillis();
+    long startTime = 0l;
     long connTime = Long.MIN_VALUE;
     long executeTime = Long.MIN_VALUE;
     long firstRowFetchTime = Long.MIN_VALUE;
@@ -161,12 +172,19 @@ public class GenericQueryDispatcher {
     long rowCount = 0l;
     int columnCount = 0;
     try {
+      String sqlQuery = getSqlStatement(queryFileName);
+      LOG.info("Extracted Query from : " + queryFileName);
+      String basicFileName = (new File(queryFileName)).getName();
+      String queryLabel = basicFileName.subSequence(0,
+          basicFileName.lastIndexOf(".q")).toString();
+      LOG.info("Executing Query : " + queryLabel);
+      startTime = System.currentTimeMillis();
       connection = DriverManager.getConnection(connectionUrl);
       // Time to Connect
       connTime = System.currentTimeMillis();
       LOG.info("Connect Time: " + ((connTime - startTime) / 1000f) + " sec");
       statement = connection.createStatement();
-      resultSet = statement.executeQuery(getSqlStatement(queryFileName));
+      resultSet = statement.executeQuery(sqlQuery);
       // Time to Execute
       executeTime = System.currentTimeMillis();
       LOG.info("Execute Time: " + ((executeTime - connTime) / 1000f) + " sec");
@@ -187,6 +205,7 @@ public class GenericQueryDispatcher {
     } finally {
       endTime = System.currentTimeMillis();
       try {
+        LOG.info("Closing connections");
         if (resultSet != null) {
           resultSet.close();
         }
@@ -202,15 +221,16 @@ public class GenericQueryDispatcher {
       }
       if (!status)
         LOG.error("Last row was fetched at " + new Date(lastRowFetchTime)
-            + " [" + ((endTime - lastRowFetchTime) / 1000f)
-            + " secs ago]");
+            + " [" + ((endTime - lastRowFetchTime) / 1000f) + " secs ago]");
       LOG.info("Time to fetch 1st row : "
           + ((firstRowFetchTime - executeTime) / 1000f) + " sec");
       LOG.info("Fetched " + rowCount + " rows with " + columnCount
           + " columns in " + ((endTime - executeTime) / 1000f) + " sec");
-      LOG.info("Fetch Rate: "
-          + (rowCount * 1000f / (endTime - executeTime)) + " rows/sec ");
+      LOG.info("Fetch Rate: " + (rowCount * 1000f / (endTime - executeTime))
+          + " rows/sec ");
     }
+    LOG.info("Total Time: " + (System.currentTimeMillis() - startTime) / 1000f
+        + " sec ");
     return status;
   }
 }

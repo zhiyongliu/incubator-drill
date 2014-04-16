@@ -153,7 +153,9 @@ public class JsonTestDataProvider {
       }
     } else {
       for (File file : root.listFiles()) {
-        list.addAll(searchFiles(file, regex));
+        if (!file.getName().equals("datasources")) {
+          list.addAll(searchFiles(file, regex));
+        }
       }
     }
     return list;
