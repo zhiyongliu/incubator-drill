@@ -53,23 +53,23 @@ public class TestVerifier {
    * @throws InterruptedException
    */
   public static boolean fileComparisonVerify(String expectedOutput,
-      String actualOutput, int outputFileHeaderSize) throws IOException,
+      String actualOutput) throws IOException,
       InterruptedException {
-    extractQueryOutput(actualOutput, outputFileHeaderSize);
     Map<String, Integer> expectedMap = getExpectedMap(expectedOutput);
     List<String> unexpectedList = new ArrayList<String>();
     BufferedReader reader = new BufferedReader(new FileReader(new File(
         actualOutput)));
-    String line = "";
+    String line = reader.readLine();
+    String record = reader.readLine().trim();
     int unexpectedCount = 0;
     while ((line = reader.readLine()) != null) {
-      line.trim();
-      if (!check(expectedMap, line)) {
+      if (!check(expectedMap, record)) {
         if (unexpectedCount < MAX_MISMATCH_SIZE) {
-          unexpectedList.add(line);
+          unexpectedList.add(record);
           unexpectedCount++;
         }
       }
+      record = line.trim();
     }
     reader.close();
     printSummary(unexpectedList, unexpectedCount, expectedMap);
@@ -131,13 +131,6 @@ public class TestVerifier {
       printSummary(unexpectedMap, expectedMap);
       return false;
     }
-  }
-
-  private static void extractQueryOutput(String filename, int startLineNumber)
-      throws InterruptedException, IOException {
-    String[] commands = { "/bin/sh", "-c",
-        "sed -i '1," + startLineNumber + "d;N;$!P;$!D;$d' " + filename };
-    Runtime.getRuntime().exec(commands).waitFor();
   }
 
   private static Map<String, Integer> getExpectedMap(String filename)

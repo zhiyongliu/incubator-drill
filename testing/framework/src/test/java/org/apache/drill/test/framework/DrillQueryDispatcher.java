@@ -15,16 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.test.drilltests;
+package org.apache.drill.test.framework;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-import org.apache.drill.test.framework.GenericQueryDispatcher;
-import org.apache.drill.test.framework.Utils;
+import java.io.PrintWriter;
+import java.util.Scanner;
 
 /**
  * Additional drill-specific query dispatching methods to the generic
@@ -58,29 +52,12 @@ public class DrillQueryDispatcher extends GenericQueryDispatcher {
         + " --format tsv -t " + queryType + " -z "
         + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     LOG.info("Executing " + command + ".");
-    Process process = Runtime.getRuntime().exec(command);
-    process.waitFor();
-    StringBuilder builder = new StringBuilder();
-    String line = "";
-    String last = "";
-    BufferedReader reader = new BufferedReader(new InputStreamReader(
-        process.getInputStream()));
-    line = reader.readLine();
-    while ((last = reader.readLine()) != null) {
-      builder.append(line.trim() + '\n');
-      line = last;
-    }
-    reader.close();
-    writeConsoleOutputToFile(builder.toString().trim(), outputFileName);
-  }
-
-  public void writeConsoleOutputToFile(String content, String outputFileName)
-      throws IOException {
-    File file = new File(outputFileName);
-    FileOutputStream fos = new FileOutputStream(file);
-    byte[] bytes = content.getBytes();
-    fos.write(bytes);
-    fos.flush();
-    fos.close();
+    Process p = Runtime.getRuntime().exec(command);
+    p.waitFor();
+    Scanner scanner = new Scanner(p.getInputStream()).useDelimiter("\\A");
+    String output = scanner.hasNext() ? scanner.next() : "";
+    PrintWriter writer = new PrintWriter(outputFileName);
+    writer.write(output);
+    writer.close();
   }
 }

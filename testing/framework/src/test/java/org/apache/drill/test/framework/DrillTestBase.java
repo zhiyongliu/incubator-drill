@@ -15,10 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.test.drilltests;
+package org.apache.drill.test.framework;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,16 +30,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.drill.jdbc.Driver;
-import org.apache.drill.test.framework.Cluster;
-import org.apache.drill.test.framework.TestVerifier;
-import org.apache.drill.test.framework.TestCaseModeler;
-import org.apache.drill.test.framework.Utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 
 /**
  * This is the test base class that defines test procedures. All test
@@ -45,7 +46,7 @@ import org.testng.Assert;
  * @author Zhiyong Liu
  * 
  */
-public abstract class DrillTestBase {
+public class DrillTestBase {
   protected static final String TRACK_RESOURCES_HOME_LABEL = "TRACK_RESOURCES_HOME";
   protected static final String START_RESRC_TRACKING_CMD_LABEL = "START_RESRC_TRACKING_CMD";
   protected static final String STOP_RESRC_TRACKING_CMD_LABEL = "STOP_RESRC_TRACKING_CMD";
@@ -65,8 +66,6 @@ public abstract class DrillTestBase {
       .get("DRILL_HOME") + "/bin/submit_plan";
   private static final int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
-  protected static final String CLUSTER_NAME = drillProperties
-      .get("CLUSTER_NAME");
   // [Kunal] Adding support for resource tracking
   protected static final String TRACK_RESRC_HOME = drillProperties
       .get(TRACK_RESOURCES_HOME_LABEL);
@@ -74,15 +73,36 @@ public abstract class DrillTestBase {
       .get(START_RESRC_TRACKING_CMD_LABEL);
   protected static final String STOP_RESRC_TRACKING_CMD = drillProperties
       .get(STOP_RESRC_TRACKING_CMD_LABEL);
-  private static String jdbcDriverUrl = null;
+  private Connection connection = null;
+  private Statement statement = null;
+  private ResultSet resultSet = null;
+  private static String connectionUrl = "";
   static {
-    Driver.load();
-    try {
-      jdbcDriverUrl = System.getProperty("jdbc.connection.url");
-      LOG.info("JDBC driver URL is " + jdbcDriverUrl);
-    } catch (Exception e) {
-      LOG.warn("No JDBC connection URL found.  This value is required "
-          + "if queries are submitted via JDBC.");
+    connectionUrl = System.getProperty("jdbc.connection.url");
+    if (connectionUrl == null || connectionUrl.isEmpty()) {
+      throw new RuntimeException(
+          "Error: Cannot submit queries via JDBC without a connection driver.");
+    }
+    LOG.info("JDBC driver URL is " + connectionUrl);
+  }
+
+  @BeforeClass
+  public void beforeClass() throws SQLException, ClassNotFoundException {
+    Class.forName("org.apache.drill.jdbc.Driver");
+    connection = DriverManager.getConnection(connectionUrl);
+    statement = connection.createStatement();
+  }
+
+  @AfterClass
+  public void afterClass() throws SQLException {
+    if (resultSet != null) {
+      resultSet.close();
+    }
+    if (statement != null) {
+      statement.close();
+    }
+    if (connection != null) {
+      connection.close();
     }
   }
 
@@ -117,6 +137,9 @@ public abstract class DrillTestBase {
     testProcess(modeler.getTestId(), modeler.getDescription(),
         modeler.getSubmitType(), modeler.getQueryType(), inputFileNames,
         outputFormats, expectedFiles, schemas, verificationTypes);
+    if (resultSet != null) {
+      resultSet.close();
+    }
   }
 
   private void prepareData(List<TestCaseModeler.DataSource> datasources)
@@ -178,9 +201,11 @@ public abstract class DrillTestBase {
     LOG.info("Query dispatch end time: " + dateFormat.format(date2));
     LOG.info("The execution time for the query: "
         + Utils.getDateDiff(date2, date1, "second") + " seconds.");
-    if (submitType.equals("sqlline") || submitType.equals("submit_plan")) {
+    if (submitType.equals("sqlline")) {
+      verified = true;
+    } else if (submitType.equals("submit_plan")) {
       verified = verified
-          && verifySqllineSubmitType(expectedFiles, outputFileNames);
+          && verifySubmitPlanSubmitType(expectedFiles, outputFileNames);
     } else if (submitType.equals("jdbc")) {
       if (verificationTypes != null && verificationTypes.length != 0
           && !verificationTypes[0].equalsIgnoreCase("none")) {
@@ -220,15 +245,12 @@ public abstract class DrillTestBase {
               dispatcher.dispatchQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
                   inputFileNames[i], outputFileNames[i], queryType);
             } else if (submitType.equals("jdbc")) {
-              if (jdbcDriverUrl == null) {
-                throw new RuntimeException(
-                    "Error: Cannot submit queries via JDBC without a connection driver.");
-              }
               if (verificationTypes[i] == null
                   || verificationTypes[i].equalsIgnoreCase("none")) {
-                dispatcher.executeQueryJDBC(jdbcDriverUrl, inputFileNames[i]);
+                dispatcher.executeQueryJDBC(inputFileNames[i], statement);
               }
-              resultSets.add(dispatcher.dispatchQueryJDBC(inputFileNames[i]));
+              resultSets.add(dispatcher.dispatchQueryJDBC(inputFileNames[i],
+                  statement));
             }
           }
         }
@@ -251,13 +273,13 @@ public abstract class DrillTestBase {
     return outputFileNames;
   }
 
-  private boolean verifySqllineSubmitType(String[] expectedOutputs,
+  private boolean verifySubmitPlanSubmitType(String[] expectedOutputs,
       String[] actualOutputs) throws IOException, InterruptedException {
     boolean verified = true;
     for (int i = 0; i < expectedOutputs.length; i++) {
       verified = verified
           && TestVerifier.fileComparisonVerify(expectedOutputs[i],
-              actualOutputs[i], handler.getHeadSizes()[i]);
+              actualOutputs[i]);
       if (!verified) {
         return verified;
       }

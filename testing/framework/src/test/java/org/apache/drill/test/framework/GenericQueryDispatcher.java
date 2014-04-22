@@ -21,8 +21,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -81,27 +79,14 @@ public class GenericQueryDispatcher {
    * @return Map of query results and their occurrences
    * @throws Exception
    */
-  public Map<String, Integer> dispatchQueryJDBC(String queryFileName)
-      throws Exception {
-    Connection connection = null;
-    Statement statement = null;
-    ResultSet resultSet = null;
+  public Map<String, Integer> dispatchQueryJDBC(String queryFileName,
+      Statement statement) throws Exception {
     Map<String, Integer> map = new HashMap<String, Integer>();
-    String connectionUrl = "";
-    try {
-      connectionUrl = System.getProperty("jdbc.connection.url");
-      LOG.info("JDBC driver URL is " + connectionUrl);
-    } catch (Exception e) {
-      LOG.warn("No JDBC connection URL found.  This value is required "
-          + "if queries are submitted via JDBC.");
-    }
-
-    // will uncomment these lines with schema bug is fixed
+    // TODO will uncomment these lines with schema bug is fixed
     // String connectionUrl = "jdbc:drill:schema=" + schema + ";zk="
     // + Utils.getDrillTestProperties().get("ZOOKEEPERS");
+    ResultSet resultSet = null;
     try {
-      connection = DriverManager.getConnection(connectionUrl);
-      statement = connection.createStatement();
       resultSet = statement.executeQuery(getSqlStatement(queryFileName));
       int columnCount = resultSet.getMetaData().getColumnCount();
       while (resultSet.next()) {
@@ -124,12 +109,6 @@ public class GenericQueryDispatcher {
     } finally {
       if (resultSet != null) {
         resultSet.close();
-      }
-      if (statement != null) {
-        statement.close();
-      }
-      if (connection != null) {
-        connection.close();
       }
     }
   }
@@ -158,10 +137,8 @@ public class GenericQueryDispatcher {
    * @return
    */
   // TODO get rid of connectionUrl; similar to dispatchQueryJDBC()
-  public boolean executeQueryJDBC(String connectionUrl, String queryFileName) {
+  public boolean executeQueryJDBC(String queryFileName, Statement statement) {
     boolean status = true;
-    Connection connection = null;
-    Statement statement = null;
     ResultSet resultSet = null;
     long startTime = 0l;
     long connTime = Long.MIN_VALUE;
@@ -179,11 +156,9 @@ public class GenericQueryDispatcher {
           basicFileName.lastIndexOf(".q")).toString();
       LOG.info("Executing Query : " + queryLabel);
       startTime = System.currentTimeMillis();
-      connection = DriverManager.getConnection(connectionUrl);
       // Time to Connect
       connTime = System.currentTimeMillis();
       LOG.info("Connect Time: " + ((connTime - startTime) / 1000f) + " sec");
-      statement = connection.createStatement();
       resultSet = statement.executeQuery(sqlQuery);
       // Time to Execute
       executeTime = System.currentTimeMillis();
@@ -208,12 +183,6 @@ public class GenericQueryDispatcher {
         LOG.info("Closing connections");
         if (resultSet != null) {
           resultSet.close();
-        }
-        if (statement != null) {
-          statement.close();
-        }
-        if (connection != null) {
-          connection.close();
         }
       } catch (SQLException e) {
         LOG.error("[ERROR] During close: " + e.getMessage());

@@ -4,10 +4,11 @@
 In the file framework/src/main/resources/drillTestConfig.properties, configure test environment as needed:
 1. DRILL_HOME is where drill is installed.
 2. DRILL_TEST_DATA_DIR points to the parent directory of the drill test data.  If a relative path is provided, it is expected to be under drilltests.
-3. CLUSTER_NAME is name of cluster (this is currently for logging purposes).
-4. HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
-5. DRILL_TESTDATA specifies path to the distributed system where data is to be populated.
-6. ZOOKEEPERS is a list of zookeepers in the cluster.
+3. HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
+4. DRILL_TESTDATA specifies path to the distributed system where data is to be populated.
+5. ZOOKEEPERS is a list of zookeepers in the cluster.
+6. TIME_OUT_SECONDS specifies the timeout value for each test.  This is an interim solution and this value should be test suite specific.
+7. The three properties under Resource Tracking are for performance tests.
 
 Add maven dependencies required by the project, if necessary.
 
@@ -28,11 +29,11 @@ cd to the testing directory, and execute mvn clean install.
 
 ## Steps:
 
-1. cd testing/drilltests/resources.
+1. cd testing/framework/resources.
 2. (Optional) Create a test group directory.
 3. (Optional) Create datasources directory.
 4. (Optional) Create testcases and testcase1 directories.
-5. In the same directory, create the .q, .e and .json files.  These files must be in the same directory.
+5. In the same directory, create the .q, .e and .json files.  The .q and .e files must come in pair, each of which should have the same basic name.  These files must be in the same directory.
 
 
 ## Explanations of the files:
@@ -98,13 +99,14 @@ Here, there are two ways to populate data.  The first one is "cp", which does a 
 
 ## Executing tests:
 
-To run a test, execute the following command in the drilltests directory:
+To run a test, execute the following command in the framework directory:
 
-    mvn clean test -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster#positiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
+    mvn clean test -Dtest=org.apache.drill.test.framework.DrillTestsMapRCluster#positiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
 
 A wrapping script is also provided, so that you can execute tests using this command:
 
     ./runtests.sh -c positiveTests -s basic_query/testcases/select/select.json -g smoke
     ./runtests.sh -c positiveTests -s amplab/jdbc -u jdbc:drill: -g smoke
+    ./runtests.sh -c positiveTests -s p1tests/testcases -g smoke -u "jdbc:drill:schema=dfs;zk=10.10.30.104:5181,10.10.30.105:5181,10.10.30.106:5181"
 
 See the runtests.sh script for detailed usage.

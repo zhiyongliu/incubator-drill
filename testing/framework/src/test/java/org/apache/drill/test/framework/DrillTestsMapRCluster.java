@@ -17,29 +17,27 @@
  */
 package org.apache.drill.test.framework;
 
-import java.io.IOException;
+import junit.framework.Assert;
+
+import org.testng.annotations.Test;
 
 /**
- * The interface that models the abstract cluster concept. Concrete clusters
- * should implement this interface to provide cluster information. Currently,
- * Cluster provides such information mainly for logging purposes.
+ * Test client for all drill tests in a MapR cluster.
  * 
  * @author Zhiyong Liu
  * 
  */
-public interface Cluster {
-  /**
-   * Gets the name of the cluster.
-   * 
-   * @return name of cluster
-   */
-  public String getName();
-
-  /**
-   * Gets the version of the cluster.
-   * 
-   * @return version of cluster
-   * @throws IOException
-   */
-  public String getVersion() throws IOException;
+public class DrillTestsMapRCluster extends DrillTestBase {
+  @Test(dataProviderClass = JsonTestDataProvider.class, dataProvider = "jsonTestDataProvider")
+  public void positiveTests(TestCaseModeler modeler) throws Exception {
+    LOG.debug(modeler);
+    runTest(modeler);
+  }
+  
+  @Test
+  public void simpleTest() {
+    int i = 1;
+    int j = 2;
+    Assert.assertEquals(3, i + j);
+  }
 }

@@ -15,16 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.test.drilltests;
+package org.apache.drill.test.framework;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.apache.drill.test.framework.JsonTestDataProvider;
-import org.apache.drill.test.framework.TestCaseModeler;
-import org.apache.drill.test.framework.Utils;
 import org.apache.log4j.Logger;
 import org.testng.annotations.Test;
 

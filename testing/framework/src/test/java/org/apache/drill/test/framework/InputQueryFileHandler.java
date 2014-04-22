@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.drill.test.drilltests;
+package org.apache.drill.test.framework;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
