@@ -45,7 +45,7 @@ public class JsonTestDataProvider {
    * follows:
    * 
    * mvn clean test
-   * -Dtest=org.apache.drill.test.drilltests.DrillTestsMapRCluster
+   * -Dtest=org.apache.drill.test.framwork.DrillTestsMapRCluster
    * #testDrillBasicQueries
    * -Dtest.def.sources=/root/open-source-drill-test/org.apache
    * .drill.test/drilltests/resources/basic_query

@@ -17,8 +17,6 @@
  */
 package org.apache.drill.test.framework;
 
-import junit.framework.Assert;
-
 import org.testng.annotations.Test;
 
 /**
@@ -32,12 +30,5 @@ public class DrillTestsMapRCluster extends DrillTestBase {
   public void positiveTests(TestCaseModeler modeler) throws Exception {
     LOG.debug(modeler);
     runTest(modeler);
-  }
-  
-  @Test
-  public void simpleTest() {
-    int i = 1;
-    int j = 2;
-    Assert.assertEquals(3, i + j);
   }
 }

@@ -27,6 +27,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,21 +77,11 @@ public class DrillTestBase {
   private Connection connection = null;
   private Statement statement = null;
   private ResultSet resultSet = null;
-  private static String connectionUrl = "";
-  static {
-    connectionUrl = System.getProperty("jdbc.connection.url");
-    if (connectionUrl == null || connectionUrl.isEmpty()) {
-      throw new RuntimeException(
-          "Error: Cannot submit queries via JDBC without a connection driver.");
-    }
-    LOG.info("JDBC driver URL is " + connectionUrl);
-  }
+  private static Map<String, Pair> connectionMap = new HashMap<String, Pair>();
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException {
     Class.forName("org.apache.drill.jdbc.Driver");
-    connection = DriverManager.getConnection(connectionUrl);
-    statement = connection.createStatement();
   }
 
   @AfterClass
@@ -98,11 +89,14 @@ public class DrillTestBase {
     if (resultSet != null) {
       resultSet.close();
     }
-    if (statement != null) {
-      statement.close();
-    }
-    if (connection != null) {
-      connection.close();
+    for (Map.Entry<String, Pair> entry : connectionMap.entrySet()) {
+      Pair pair = entry.getValue();
+      if (pair.getStatement() != null) {
+        pair.getStatement().close();
+      }
+      if (pair.getConnection() != null) {
+        pair.getConnection().close();
+      }
     }
   }
 
@@ -116,6 +110,17 @@ public class DrillTestBase {
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
     List<TestCaseModeler.TestMatrix> matrices = modeler.getMatrices();
+    for (TestCaseModeler.TestMatrix matrix : matrices) {
+      String schema = matrix.getSchema();
+      if (!connectionMap.containsKey(schema)) {
+        String url = "jdbc:drill:schema=" + schema + ";zk="
+            + Utils.getDrillTestProperties().get("ZOOKEEPERS");
+        LOG.info("Connecting to " + url);
+        connection = DriverManager.getConnection(url);
+        statement = connection.createStatement();
+        connectionMap.put(schema, new Pair(connection, statement));
+      }
+    }
     String[] inputFileNames = new String[matrices.size()];
     String[] schemas = new String[matrices.size()];
     String[] outputFormats = new String[matrices.size()];
@@ -331,6 +336,24 @@ public class DrillTestBase {
     } else {
       LOG.info("The source file " + src
           + " already exists in destination.  Skipping the copy.");
+    }
+  }
+
+  private class Pair {
+    private Connection connection;
+    private Statement statement;
+
+    public Pair(Connection connection, Statement statement) {
+      this.connection = connection;
+      this.statement = statement;
+    }
+
+    public Connection getConnection() {
+      return connection;
+    }
+
+    public Statement getStatement() {
+      return statement;
     }
   }
 }

@@ -76,15 +76,14 @@ public class GenericQueryDispatcher {
    * 
    * @param queryFileName
    *          name of query file
+   * @param statement
+   *          sql statement to execute the query with
    * @return Map of query results and their occurrences
    * @throws Exception
    */
   public Map<String, Integer> dispatchQueryJDBC(String queryFileName,
       Statement statement) throws Exception {
     Map<String, Integer> map = new HashMap<String, Integer>();
-    // TODO will uncomment these lines with schema bug is fixed
-    // String connectionUrl = "jdbc:drill:schema=" + schema + ";zk="
-    // + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     ResultSet resultSet = null;
     try {
       resultSet = statement.executeQuery(getSqlStatement(queryFileName));
@@ -136,7 +135,6 @@ public class GenericQueryDispatcher {
    * @param queryFileName
    * @return
    */
-  // TODO get rid of connectionUrl; similar to dispatchQueryJDBC()
   public boolean executeQueryJDBC(String queryFileName, Statement statement) {
     boolean status = true;
     ResultSet resultSet = null;

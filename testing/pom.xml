@@ -39,6 +39,7 @@
 		<google.common.version>16.0.1</google.common.version>
 		<drill.version>1.0.0-m2-incubating-SNAPSHOT</drill.version>
 		<mapr.hadoop.version>1.0.3-mapr-3.0.2</mapr.hadoop.version>
+		<runtimeDepenencies>/etc/drill/conf</runtimeDepenencies>
 	</properties>
 
 	<dependencies>

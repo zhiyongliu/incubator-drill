@@ -2,7 +2,6 @@
 
 category=""
 defSources=""
-jdbcUrl=""
 groups=""
 
 #
@@ -14,11 +13,10 @@ usage()
 
     cat  << EOF
 
-$0 -c <category> [-s <defSources>] [-u <jdbcUrl>] [-g <groups>]
+$0 -c <category> [-s <defSources>] [-g <groups>]
 
     -c <category> : required
     -s <defSources> : optional
-    -u <jdbcUrl> : optional
     -g <groups> : optional
 
     Valid values for category:
@@ -28,9 +26,6 @@ $0 -c <category> [-s <defSources>] [-u <jdbcUrl>] [-g <groups>]
     testDefSource - test definition file/directory.  If not provided, all tests under resources will run.  Examples:
       basic_query/testcases/select/select.json
       /root/basic_query/testcases/select/select.json
-
-    jdbcUrl - JDBC connection URL; required only when queries are submitted via JDBC.  Examples:
-      jdbc.drill:
 
     testGroups - optional.  When not specified, all test groups will be executed.  Examples:
       smoke
@@ -68,14 +63,6 @@ while [ $# -gt 0 ]; do
             ;;
 
         #
-        # jdbcUrl is optional
-        #
-        -u)
-            jdbcUrl=$2
-            shift
-            ;;
-
-        #
         # groups is optional
         #
         -g) 
@@ -108,10 +95,6 @@ command="mvn clean test -Dtest=org.apache.drill.test.framework.DrillTestsMapRClu
 if [ -n "$defSources" ]; then
     echo "getting defSource......."
     command=$command" -Dtest.def.sources=$defSources"
-fi
-
-if [ -n "$jdbcUrl" ]; then
-    command=$command" -Djdbc.connection.url=$jdbcUrl"
 fi
 
 if [ -n "$groups" ]; then
