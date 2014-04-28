@@ -1,0 +1,66 @@
+{
+    "testId": "testJsonGeneric",
+    "type": "group",
+    "description": "Test generic json queries",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDir",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+	    {
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeObject.json",
+        "dest": "json_storage/employeeObject.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeArray.json",
+        "dest": "json_storage/employeeArray.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeNestedArrayAndObject.json",
+        "dest": "json_storage/employeeNestedArrayAndObject.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeNestedObject.json",
+        "dest": "json_storage/employeeNestedObject.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeObject.json",
+        "dest": "json_storage/testDirEmployee/employeeObject.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeNestedObject.json",
+        "dest": "json_storage/testDirEmployeeNested/employeeNestedObject.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeNestedArray.json",
+        "dest": "json_storage/employeeNestedArray.json"
+    	},
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeObjectNull.json",
+        "dest": "json_storage/employeeObjectNull.json"
+    	}, 
+    	{
+        "mode": "cp",
+        "src": "json_storage/datasources/employeeObjectMissingField.json",
+        "dest": "json_storage/employeeObjectMissingField.json"
+    	}    	   	
+    ]
+}
