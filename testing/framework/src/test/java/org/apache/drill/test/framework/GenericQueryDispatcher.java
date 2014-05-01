@@ -17,9 +17,7 @@
  */
 package org.apache.drill.test.framework;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -81,12 +79,13 @@ public class GenericQueryDispatcher {
    * @return Map of query results and their occurrences
    * @throws Exception
    */
-  public Map<String, Integer> dispatchQueryJDBC(String queryFileName,
+  public Map<String, Integer> dispatchQueryJDBC(String query,
       Statement statement) throws Exception {
     Map<String, Integer> map = new HashMap<String, Integer>();
     ResultSet resultSet = null;
     try {
-      resultSet = statement.executeQuery(getSqlStatement(queryFileName));
+      LOG.info("Submitting query:\n" + query);
+      resultSet = statement.executeQuery(query);
       int columnCount = resultSet.getMetaData().getColumnCount();
       while (resultSet.next()) {
         StringBuilder builder = new StringBuilder();
@@ -112,22 +111,6 @@ public class GenericQueryDispatcher {
     }
   }
 
-  private String getSqlStatement(String queryFileName) throws IOException {
-    StringBuilder builder = new StringBuilder();
-    BufferedReader reader = new BufferedReader(new FileReader(new File(
-        queryFileName)));
-    String line = null;
-    while ((line = reader.readLine()) != null && !line.trim().isEmpty()) {
-      builder.append(line);
-    }
-    reader.close();
-    String statement = builder.toString().trim();
-    if (statement.endsWith(";")) {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    return statement;
-  }
-
   /**
    * Executes a JDBC Query and iterates through the resultSet
    * 
@@ -135,7 +118,7 @@ public class GenericQueryDispatcher {
    * @param queryFileName
    * @return
    */
-  public boolean executeQueryJDBC(String queryFileName, Statement statement) {
+  public boolean executeQueryJDBC(String query, String queryFileName, Statement statement) {
     boolean status = true;
     ResultSet resultSet = null;
     long startTime = 0l;
@@ -147,7 +130,6 @@ public class GenericQueryDispatcher {
     long rowCount = 0l;
     int columnCount = 0;
     try {
-      String sqlQuery = getSqlStatement(queryFileName);
       LOG.info("Extracted Query from : " + queryFileName);
       String basicFileName = (new File(queryFileName)).getName();
       String queryLabel = basicFileName.subSequence(0,
@@ -157,7 +139,7 @@ public class GenericQueryDispatcher {
       // Time to Connect
       connTime = System.currentTimeMillis();
       LOG.info("Connect Time: " + ((connTime - startTime) / 1000f) + " sec");
-      resultSet = statement.executeQuery(sqlQuery);
+      resultSet = statement.executeQuery(query);
       // Time to Execute
       executeTime = System.currentTimeMillis();
       LOG.info("Execute Time: " + ((executeTime - connTime) / 1000f) + " sec");
@@ -170,9 +152,6 @@ public class GenericQueryDispatcher {
       }
     } catch (SQLException e) {
       e.printStackTrace();
-      LOG.error(e.getMessage());
-      status = false;
-    } catch (IOException e) {
       LOG.error(e.getMessage());
       status = false;
     } finally {

@@ -17,6 +17,9 @@
  */
 package org.apache.drill.test.framework;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -54,7 +57,6 @@ public class DrillTestBase {
   protected String trackingSessionUID = null;
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
-  private InputQueryFileHandler handler = null;
   private DrillQueryDispatcher dispatcher = null;
   private static final String CONGREGATED_FILENAME = "/tmp/congregated.q";
   private DateFormat dateFormat = new SimpleDateFormat(
@@ -78,6 +80,10 @@ public class DrillTestBase {
   private Statement statement = null;
   private ResultSet resultSet = null;
   private static Map<String, Pair> connectionMap = new HashMap<String, Pair>();
+  private static String query = "";
+  private static String summaryPassing = "\nPassing Tests:\n==============\n";
+  private static String summaryFailed = "\nFailed Tests:\n=============\n";
+  private static boolean verified = true;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException {
@@ -98,6 +104,8 @@ public class DrillTestBase {
         pair.getConnection().close();
       }
     }
+    LOG.info(summaryPassing);
+    LOG.info(summaryFailed);
   }
 
   /**
@@ -177,14 +185,10 @@ public class DrillTestBase {
       String queryType, String[] inputFileNames, String[] outputFormats,
       String[] expectedFiles, String[] schemas, String[] verificationTypes)
       throws Exception {
-    boolean verified = true;
+    verified = true;
     boolean timedOut = false;
     logTestStart(testId, testDesc);
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
-    handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
-        outputFormats);
-    String queries = handler.congregateFiles(CONGREGATED_FILENAME);
-    LOG.info("Submitting queries:\n" + queries);
     dispatcher = new DrillQueryDispatcher(schemas[0]);
     Date date1 = new Date();
     List<Map<String, Integer>> resultSets = new ArrayList<Map<String, Integer>>();
@@ -199,6 +203,7 @@ public class DrillTestBase {
       verified = false;
       timedOut = true;
       runThread.interrupt();
+      summaryFailed += "***[timedout] " + query + "\n";
       logTestEnd(testId, verified, timedOut);
       return;
     }
@@ -216,6 +221,11 @@ public class DrillTestBase {
           && !verificationTypes[0].equalsIgnoreCase("none")) {
         verified = verified && verifyJdbcSubmitType(expectedFiles, resultSets);
       }
+    }
+    if (verified) {
+      summaryPassing += "*** " + query + "\n";
+    } else {
+      summaryFailed += "*** " + query + "\n";
     }
     logTestEnd(testId, verified, timedOut);
   }
@@ -246,20 +256,22 @@ public class DrillTestBase {
           dispatcher.dispatchQueriesCLI(SQLLINE_COMMAND, CONGREGATED_FILENAME);
         } else {
           for (int i = 0; i < inputFileNames.length; i++) {
+            query = getSqlStatement(inputFileNames[i]);
             if (submitType.equals("submit_plan")) {
               dispatcher.dispatchQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
                   inputFileNames[i], outputFileNames[i], queryType);
             } else if (submitType.equals("jdbc")) {
               if (verificationTypes[i] == null
                   || verificationTypes[i].equalsIgnoreCase("none")) {
-                dispatcher.executeQueryJDBC(inputFileNames[i], statement);
+                dispatcher
+                    .executeQueryJDBC(query, inputFileNames[i], statement);
               }
-              resultSets.add(dispatcher.dispatchQueryJDBC(inputFileNames[i],
-                  statement));
+              resultSets.add(dispatcher.dispatchQueryJDBC(query, statement));
             }
           }
         }
       } catch (Exception e) {
+        verified = false;
         e.printStackTrace();
       }
     }
@@ -337,6 +349,22 @@ public class DrillTestBase {
       LOG.info("The source file " + src
           + " already exists in destination.  Skipping the copy.");
     }
+  }
+
+  private String getSqlStatement(String queryFileName) throws IOException {
+    StringBuilder builder = new StringBuilder();
+    BufferedReader reader = new BufferedReader(new FileReader(new File(
+        queryFileName)));
+    String line = null;
+    while ((line = reader.readLine()) != null) {
+      builder.append(line + "\n");
+    }
+    reader.close();
+    String statement = builder.toString().trim();
+    while (statement.endsWith(";")) {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    return statement;
   }
 
   private class Pair {
