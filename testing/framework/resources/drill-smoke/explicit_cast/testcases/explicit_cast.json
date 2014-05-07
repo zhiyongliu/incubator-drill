@@ -20,7 +20,7 @@
     "datasources": [
         {
             "mode": "cp",
-            "src": "explicit_cast/datasources/data",
+            "src": "drill-smoke/explicit_cast/datasources/data",
             "dest": "explicit_cast/data"
         }
     ]
