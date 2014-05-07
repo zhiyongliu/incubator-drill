@@ -101,7 +101,7 @@ Here, there are two ways to populate data.  The first one is "cp", which does a 
 
 To run a test, execute the following command in the framework directory:
 
-    mvn clean test -Dtest=org.apache.drill.test.framework.DrillTestsMapRCluster#positiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
+    mvn clean test -Dtest=org.apache.drill.test.framework.DrillTests#positiveTests -Dtest.def.sources=basic_query/testcases/select/select.json -Dtest.groups=smoke
 
 A wrapping script is also provided, so that you can execute tests using this command:
 

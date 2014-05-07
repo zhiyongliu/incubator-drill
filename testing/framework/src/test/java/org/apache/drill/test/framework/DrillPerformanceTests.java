@@ -31,7 +31,18 @@ import org.testng.annotations.Test;
  * @author
  * 
  */
-public class DrillPerformanceTests extends DrillTestsMapRCluster {
+public class DrillPerformanceTests extends DrillTests {
+  private static final String TRACK_RESOURCES_HOME_LABEL = "TRACK_RESOURCES_HOME";
+  private static final String START_RESRC_TRACKING_CMD_LABEL = "START_RESRC_TRACKING_CMD";
+  private static final String STOP_RESRC_TRACKING_CMD_LABEL = "STOP_RESRC_TRACKING_CMD";
+  // private String trackingSessionUID = null;
+  // [Kunal] Adding support for resource tracking
+  protected static final String TRACK_RESRC_HOME = drillProperties
+      .get(TRACK_RESOURCES_HOME_LABEL);
+  protected static final String START_RESRC_TRACKING_CMD = drillProperties
+      .get(START_RESRC_TRACKING_CMD_LABEL);
+  protected static final String STOP_RESRC_TRACKING_CMD = drillProperties
+      .get(STOP_RESRC_TRACKING_CMD_LABEL);
   String startTrackingCmdPrefix;
   String stopTrackingCmdPrefix;
 
@@ -98,7 +109,7 @@ public class DrillPerformanceTests extends DrillTestsMapRCluster {
         lineRead = lineRead.trim();
         // Capturing Uniq ID
         if (lineRead.startsWith("[UNIQ_ID]")) {
-          trackingSessionUID = lineRead.substring("[UNIQ_ID]".length()).trim();
+//          trackingSessionUID = lineRead.substring("[UNIQ_ID]".length()).trim();
         }
         Shell.LOG.info("\t" + lineRead);
       }

@@ -90,7 +90,7 @@ fi
 #
 # run the command with the given arguments
 # 
-command="mvn clean test -Dtest=org.apache.drill.test.framework.DrillTestsMapRCluster#$category"
+command="mvn clean test -Dtest=org.apache.drill.test.framework.DrillTests#$category"
 
 if [ -n "$defSources" ]; then
     echo "getting defSource......."

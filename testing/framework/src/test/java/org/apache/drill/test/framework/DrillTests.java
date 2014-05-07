@@ -20,12 +20,12 @@ package org.apache.drill.test.framework;
 import org.testng.annotations.Test;
 
 /**
- * Test client for all drill tests in a MapR cluster.
+ * Test client for all drill tests.
  * 
  * @author Zhiyong Liu
  * 
  */
-public class DrillTestsMapRCluster extends DrillTestBase {
+public class DrillTests extends DrillTestBase {
   @Test(dataProviderClass = JsonTestDataProvider.class, dataProvider = "jsonTestDataProvider")
   public void positiveTests(TestCaseModeler modeler) throws Exception {
     LOG.debug(modeler);

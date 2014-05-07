@@ -125,10 +125,6 @@ public class InputQueryFileHandler {
    * 
    * @param congregatedFileName
    *          name of the resulting file
-   * @param outputFileName
-   *          name of output file to which command line output is written
-   * @param outputFormat
-   *          format used in presenting query output
    * @return
    * @throws IOException
    */

@@ -197,7 +197,11 @@ public class JsonTestDataProcessor {
    * Constructs a TestCaseModeler object.
    * 
    * @param matrices
-   *          list of TestCaseModeler.TestMatrix used in the construction.
+   *          list of TestCaseModeler.TestMatrix objects used in the
+   *          construction.
+   * @param datasources
+   *          list of TestCaseModeler.DataSource objects used in the
+   *          construction.
    * @return a TestCaseModeler object.
    * @throws JSONException
    */

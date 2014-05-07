@@ -53,8 +53,7 @@ public class TestVerifier {
    * @throws InterruptedException
    */
   public static boolean fileComparisonVerify(String expectedOutput,
-      String actualOutput) throws IOException,
-      InterruptedException {
+      String actualOutput) throws IOException, InterruptedException {
     Map<String, Integer> expectedMap = getExpectedMap(expectedOutput);
     List<String> unexpectedList = new ArrayList<String>();
     BufferedReader reader = new BufferedReader(new FileReader(new File(
@@ -94,6 +93,18 @@ public class TestVerifier {
     return false;
   }
 
+  /**
+   * Verifies output of a query. The verification is done by checking the map
+   * (from a ResultSet from a query) against its corresponding expected file.
+   * 
+   * @param expectedFile
+   *          file with expected results
+   * @param actualMap
+   *          map constructed from an actual ResultSet object
+   * @return true if the map contains all and only entries in the expected file.
+   * @throws IOException
+   * @throws SQLException
+   */
   public static boolean resultSetVerify(String expectedFile,
       Map<String, Integer> actualMap) throws IOException, SQLException {
     if (actualMap == null) {
@@ -215,29 +226,5 @@ public class TestVerifier {
       }
       LOG.info("Total number of expected but missing: " + expectedMap.size());
     }
-  }
-
-  public static boolean rowNumberVerify(String expectedOutput,
-      String actualOutput, int outputFileHeaderSize) throws IOException,
-      InterruptedException {
-    Map<String, Integer> expectedMap = getExpectedMap(expectedOutput);
-    int expectedNumberOfRows = expectedMap.size();
-    BufferedReader reader = new BufferedReader(new FileReader(new File(
-        actualOutput)));
-    int actualNumberOfRows = 0;
-    String line = "";
-    while ((line = reader.readLine()) != null && line.trim().length() != 0) {
-      if (line.contains("rows selected")) {
-        int index = line.indexOf("rows selected");
-        line = line.substring(0, index).trim();
-        line = line.replaceAll(",", "");
-        actualNumberOfRows = Integer.parseInt(line);
-        break;
-      }
-    }
-    reader.close();
-    LOG.info("Expected number of rows: " + expectedNumberOfRows);
-    LOG.info("Actual number of rows: " + actualNumberOfRows);
-    return expectedNumberOfRows == actualNumberOfRows;
   }
 }

@@ -43,25 +43,20 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 
 /**
- * This is the test base class that defines test procedures. All test
- * implementations should extend this class and implement their own getCluster()
- * to retrieve cluster information.
+ * This is the test base class that defines test procedures.
  * 
  * @author Zhiyong Liu
  * 
  */
 public class DrillTestBase {
-  protected static final String TRACK_RESOURCES_HOME_LABEL = "TRACK_RESOURCES_HOME";
-  protected static final String START_RESRC_TRACKING_CMD_LABEL = "START_RESRC_TRACKING_CMD";
-  protected static final String STOP_RESRC_TRACKING_CMD_LABEL = "STOP_RESRC_TRACKING_CMD";
-  protected String trackingSessionUID = null;
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
-  private DrillQueryDispatcher dispatcher = null;
+  private QuerySubmitter submitter = null;
+  protected InputQueryFileHandler handler = null;
   private static final String CONGREGATED_FILENAME = "/tmp/congregated.q";
   private DateFormat dateFormat = new SimpleDateFormat(
       "yyyy/MM/dd HH:mm:ss.ssss");
-  private static Map<String, String> drillProperties = Utils
+  protected static Map<String, String> drillProperties = Utils
       .getDrillTestProperties();
   private static final String SQLLINE_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/sqlline";
@@ -69,13 +64,6 @@ public class DrillTestBase {
       .get("DRILL_HOME") + "/bin/submit_plan";
   private static final int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
-  // [Kunal] Adding support for resource tracking
-  protected static final String TRACK_RESRC_HOME = drillProperties
-      .get(TRACK_RESOURCES_HOME_LABEL);
-  protected static final String START_RESRC_TRACKING_CMD = drillProperties
-      .get(START_RESRC_TRACKING_CMD_LABEL);
-  protected static final String STOP_RESRC_TRACKING_CMD = drillProperties
-      .get(STOP_RESRC_TRACKING_CMD_LABEL);
   private Connection connection = null;
   private Statement statement = null;
   private ResultSet resultSet = null;
@@ -189,10 +177,12 @@ public class DrillTestBase {
     boolean timedOut = false;
     logTestStart(testId, testDesc);
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
-    dispatcher = new DrillQueryDispatcher(schemas[0]);
+    handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
+        outputFormats);
+    submitter = new QuerySubmitter(schemas[0]);
     Date date1 = new Date();
     List<Map<String, Integer>> resultSets = new ArrayList<Map<String, Integer>>();
-    LOG.info("Query dispatch start time: " + dateFormat.format(date1));
+    LOG.info("Query submit start time: " + dateFormat.format(date1));
     RunThread runThread = new RunThread(submitType, inputFileNames,
         outputFileNames, queryType, resultSets, verificationTypes);
     runThread.start();
@@ -208,7 +198,7 @@ public class DrillTestBase {
       return;
     }
     Date date2 = new Date();
-    LOG.info("Query dispatch end time: " + dateFormat.format(date2));
+    LOG.info("Query submit end time: " + dateFormat.format(date2));
     LOG.info("The execution time for the query: "
         + Utils.getDateDiff(date2, date1, "second") + " seconds.");
     if (submitType.equals("sqlline")) {
@@ -253,20 +243,22 @@ public class DrillTestBase {
     public void run() {
       try {
         if (submitType.equals("sqlline")) {
-          dispatcher.dispatchQueriesCLI(SQLLINE_COMMAND, CONGREGATED_FILENAME);
+          String queries = handler.congregateFiles(CONGREGATED_FILENAME);
+          LOG.info("Submitting queries:\n" + queries);
+          submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
         } else {
           for (int i = 0; i < inputFileNames.length; i++) {
-            query = getSqlStatement(inputFileNames[i]);
+            query = inputFileNames[i] + " : "
+                + getSqlStatement(inputFileNames[i]);
             if (submitType.equals("submit_plan")) {
-              dispatcher.dispatchQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
+              submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
                   inputFileNames[i], outputFileNames[i], queryType);
             } else if (submitType.equals("jdbc")) {
               if (verificationTypes[i] == null
                   || verificationTypes[i].equalsIgnoreCase("none")) {
-                dispatcher
-                    .executeQueryJDBC(query, inputFileNames[i], statement);
+                submitter.executeQueryJDBC(query, inputFileNames[i], statement);
               }
-              resultSets.add(dispatcher.dispatchQueryJDBC(query, statement));
+              resultSets.add(submitter.submitQueryJDBC(query, statement));
             }
           }
         }

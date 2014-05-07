@@ -19,23 +19,25 @@ package org.apache.drill.test.framework;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
 /**
- * The dispatcher of queries to drill. There are a variety of interfaces via
- * which to dispatch queries.
+ * The submitter of queries to drill. There are a variety of interfaces via
+ * which to submit queries.
  * 
  * @author Zhiyong Liu
  * 
  */
-public class GenericQueryDispatcher {
+public class QuerySubmitter {
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
   private String schema;
@@ -46,7 +48,7 @@ public class GenericQueryDispatcher {
    * @param schema
    *          name of schema to use
    */
-  public GenericQueryDispatcher(String schema) {
+  public QuerySubmitter(String schema) {
     this.schema = schema;
   }
 
@@ -58,7 +60,7 @@ public class GenericQueryDispatcher {
    * @throws IOException
    * @throws InterruptedException
    */
-  public void dispatchQueriesCLI(String sqllineCommand, String queryFileName)
+  public void submitQueriesSqlline(String sqllineCommand, String queryFileName)
       throws IOException, InterruptedException {
     // TODO: need to parameterize the command line; need to finalize
     // treatment of schemas
@@ -72,15 +74,15 @@ public class GenericQueryDispatcher {
   /**
    * Submits query via JDBC
    * 
-   * @param queryFileName
-   *          name of query file
+   * @param query
+   *          SQL query string
    * @param statement
    *          sql statement to execute the query with
    * @return Map of query results and their occurrences
    * @throws Exception
    */
-  public Map<String, Integer> dispatchQueryJDBC(String query,
-      Statement statement) throws Exception {
+  public Map<String, Integer> submitQueryJDBC(String query, Statement statement)
+      throws Exception {
     Map<String, Integer> map = new HashMap<String, Integer>();
     ResultSet resultSet = null;
     try {
@@ -114,11 +116,13 @@ public class GenericQueryDispatcher {
   /**
    * Executes a JDBC Query and iterates through the resultSet
    * 
-   * @param connectionUrl
+   * @param query
    * @param queryFileName
+   * @param statement
    * @return
    */
-  public boolean executeQueryJDBC(String query, String queryFileName, Statement statement) {
+  public boolean executeQueryJDBC(String query, String queryFileName,
+      Statement statement) {
     boolean status = true;
     ResultSet resultSet = null;
     long startTime = 0l;
@@ -178,5 +182,34 @@ public class GenericQueryDispatcher {
     LOG.info("Total Time: " + (System.currentTimeMillis() - startTime) / 1000f
         + " sec ");
     return status;
+  }
+
+  /**
+   * Submit query via the submit_plan tool
+   * 
+   * @param submitPlanCommand
+   *          command of submit_plan
+   * @param queryFileName
+   *          name of file containing input query
+   * @param outputFileName
+   *          name of file containing query results
+   * @param queryType
+   *          type of query: sql, logical or physical
+   * @throws Exception
+   */
+  public void submitQueriesSubmitPlan(String submitPlanCommand,
+      String queryFileName, String outputFileName, String queryType)
+      throws Exception {
+    String command = submitPlanCommand + " -f " + queryFileName
+        + " --format tsv -t " + queryType + " -z "
+        + Utils.getDrillTestProperties().get("ZOOKEEPERS");
+    LOG.info("Executing " + command + ".");
+    Process p = Runtime.getRuntime().exec(command);
+    p.waitFor();
+    Scanner scanner = new Scanner(p.getInputStream()).useDelimiter("\\A");
+    String output = scanner.hasNext() ? scanner.next() : "";
+    PrintWriter writer = new PrintWriter(outputFileName);
+    writer.write(output);
+    writer.close();
   }
 }
