@@ -248,17 +248,18 @@ public class DrillTestBase {
           submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
         } else {
           for (int i = 0; i < inputFileNames.length; i++) {
-            query = inputFileNames[i] + " : "
-                + getSqlStatement(inputFileNames[i]);
+            String queryString = getSqlStatement(inputFileNames[i]);
+            query = inputFileNames[i] + " :\n" + queryString;
             if (submitType.equals("submit_plan")) {
               submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
                   inputFileNames[i], outputFileNames[i], queryType);
             } else if (submitType.equals("jdbc")) {
               if (verificationTypes[i] == null
                   || verificationTypes[i].equalsIgnoreCase("none")) {
-                submitter.executeQueryJDBC(query, inputFileNames[i], statement);
+                submitter.executeQueryJDBC(queryString, inputFileNames[i],
+                    statement);
               }
-              resultSets.add(submitter.submitQueryJDBC(query, statement));
+              resultSets.add(submitter.submitQueryJDBC(queryString, statement));
             }
           }
         }
