@@ -1,0 +1,41 @@
+{
+    "testId": “exchanges-smoke”,
+    "type": "group",
+    "description": "Test exchanges smoke queries via jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirExchanges",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/orders1.parquet",
+            "dest": "exchanges_test/orders/orders1.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/orders2.parquet",
+            "dest": "exchanges_test/orders/orders2.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/orders3.parquet",
+            "dest": "exchanges_test/orders/orders3.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/customer.parquet",
+            "dest": "exchanges_test/customer/customer.parquet"
+        }
+    ]
+}
