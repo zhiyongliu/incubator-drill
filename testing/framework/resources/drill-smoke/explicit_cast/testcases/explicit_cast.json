@@ -1,7 +1,7 @@
 {
     "testId": "explicit_cast",
     "type": "group",
-    "description": "Test mondrian queries via jdbc",
+    "description": "Test explicit cast smoke queries via jdbc",
     "submit-type": "jdbc",
     "categories": [
         "smoke"
@@ -9,7 +9,7 @@
     "matrices": [
         {
             "query-file": ".*.q",
-            "schema": "dfs",
+            "schema": "dfs.drillTestDirExplicit",
             "output-format": "tsv",
             "expected-file": ".*.e",
             "verification-type": [
@@ -21,7 +21,7 @@
         {
             "mode": "cp",
             "src": "explicit_cast/datasources/data",
-            "dest": "explicit_cast/datasources/data"
+            "dest": "explicit_cast/data"
         }
     ]
 }
