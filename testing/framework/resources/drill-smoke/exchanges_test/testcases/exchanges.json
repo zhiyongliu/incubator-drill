@@ -34,6 +34,16 @@
         },
         {
             "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/orders4.parquet",
+            "dest": "exchanges_test/orders/orders4.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "drill-smoke/exchanges_test/datasources/orders5.parquet",
+            "dest": "exchanges_test/orders/orders5.parquet"
+        },
+        {
+            "mode": "cp",
             "src": "drill-smoke/exchanges_test/datasources/customer.parquet",
             "dest": "exchanges_test/customer/customer.parquet"
         }
