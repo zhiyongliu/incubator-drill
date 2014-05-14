@@ -17,6 +17,10 @@
  */
 package org.apache.drill.test.framework;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -107,7 +111,33 @@ public class Utils {
     if (filename.startsWith("/")) {
       return filename;
     }
-    return Utils.getDrillTestProperties().get(propertyKey) + "/"
-        + filename;
+    return Utils.getDrillTestProperties().get(propertyKey) + "/" + filename;
+  }
+
+  /**
+   * Reads a query file and returns an array of queries.
+   * 
+   * @param queryFileName
+   *          name of file containing queries
+   * @return array of queries
+   * @throws IOException
+   */
+  public static String[] getSqlStatements(String queryFileName)
+      throws IOException {
+    StringBuilder builder = new StringBuilder();
+    BufferedReader reader = new BufferedReader(new FileReader(new File(
+        queryFileName)));
+    String line = null;
+    while ((line = reader.readLine()) != null) {
+      builder.append(line + "\n");
+    }
+    reader.close();
+    String[] statements = builder.toString().trim().split(";");
+    for (String statement : statements) {
+      while (statement.endsWith(";")) {
+        statement = statement.substring(0, statement.length() - 1);
+      }
+    }
+    return statements;
   }
 }

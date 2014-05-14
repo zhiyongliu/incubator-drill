@@ -17,9 +17,6 @@
  */
 package org.apache.drill.test.framework;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -106,17 +103,6 @@ public class DrillTestBase {
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
     List<TestCaseModeler.TestMatrix> matrices = modeler.getMatrices();
-    for (TestCaseModeler.TestMatrix matrix : matrices) {
-      String schema = matrix.getSchema();
-      if (!connectionMap.containsKey(schema)) {
-        String url = "jdbc:drill:schema=" + schema + ";zk="
-            + Utils.getDrillTestProperties().get("ZOOKEEPERS");
-        LOG.info("Connecting to " + url);
-        connection = DriverManager.getConnection(url);
-        statement = connection.createStatement();
-        connectionMap.put(schema, new Pair(connection, statement));
-      }
-    }
     String[] inputFileNames = new String[matrices.size()];
     String[] schemas = new String[matrices.size()];
     String[] outputFormats = new String[matrices.size()];
@@ -135,6 +121,17 @@ public class DrillTestBase {
     }
     List<TestCaseModeler.DataSource> datasources = modeler.getDatasources();
     prepareData(datasources);
+    for (TestCaseModeler.TestMatrix matrix : matrices) {
+      String schema = matrix.getSchema();
+      if (!connectionMap.containsKey(schema)) {
+        String url = "jdbc:drill:schema=" + schema + ";zk="
+            + Utils.getDrillTestProperties().get("ZOOKEEPERS");
+        LOG.info("Connecting to " + url);
+        connection = DriverManager.getConnection(url);
+        statement = connection.createStatement();
+        connectionMap.put(schema, new Pair(connection, statement));
+      }
+    }
     testProcess(modeler.getTestId(), modeler.getDescription(),
         modeler.getSubmitType(), modeler.getQueryType(), inputFileNames,
         outputFormats, expectedFiles, schemas, verificationTypes);
@@ -248,18 +245,41 @@ public class DrillTestBase {
           submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
         } else {
           for (int i = 0; i < inputFileNames.length; i++) {
-            String queryString = getSqlStatement(inputFileNames[i]);
-            query = inputFileNames[i] + " :\n" + queryString;
             if (submitType.equals("submit_plan")) {
               submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
                   inputFileNames[i], outputFileNames[i], queryType);
-            } else if (submitType.equals("jdbc")) {
-              if (verificationTypes[i] == null
-                  || verificationTypes[i].equalsIgnoreCase("none")) {
-                submitter.executeQueryJDBC(queryString, inputFileNames[i],
-                    statement);
+            } else {
+              String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
+              int mid = queryStrings.length / 2;
+              for (int j = 0; j < queryStrings.length; j++) {
+                String queryString = queryStrings[j];
+                if (verificationTypes[i] == null
+                    || verificationTypes[i].equalsIgnoreCase("none")) {
+                  submitter.executeQueryJDBC(queryString, inputFileNames[i],
+                      statement);
+                } else {
+                  if (submitType.equals("jdbc")) {
+                    Map<String, Integer> resultSet = submitter.submitQueryJDBC(
+                        queryString, statement);
+                    if (j == mid) {
+                      query = inputFileNames[i] + " :\n" + queryString;
+                      resultSets.add(resultSet);
+                    }
+                  } else {
+                    if (j != mid) {
+                      submitter.submitQueryJDBC(queryString, statement);
+                      continue;
+                    }
+                    if (submitType.equals("gen-physical")) {
+                      submitter.generatePlan(statement, inputFileNames[i],
+                          queryString, "physical");
+                    } else if (submitType.equals("gen-logical")) {
+                      submitter.generatePlan(statement, inputFileNames[i],
+                          queryString, "logical");
+                    }
+                  }
+                }
               }
-              resultSets.add(submitter.submitQueryJDBC(queryString, statement));
             }
           }
         }
@@ -342,22 +362,6 @@ public class DrillTestBase {
       LOG.info("The source file " + src
           + " already exists in destination.  Skipping the copy.");
     }
-  }
-
-  private String getSqlStatement(String queryFileName) throws IOException {
-    StringBuilder builder = new StringBuilder();
-    BufferedReader reader = new BufferedReader(new FileReader(new File(
-        queryFileName)));
-    String line = null;
-    while ((line = reader.readLine()) != null) {
-      builder.append(line + "\n");
-    }
-    reader.close();
-    String statement = builder.toString().trim();
-    while (statement.endsWith(";")) {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    return statement;
   }
 
   private class Pair {

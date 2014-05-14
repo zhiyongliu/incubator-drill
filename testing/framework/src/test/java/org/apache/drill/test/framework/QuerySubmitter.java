@@ -17,7 +17,9 @@
  */
 package org.apache.drill.test.framework;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
@@ -25,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -86,17 +89,22 @@ public class QuerySubmitter {
     Map<String, Integer> map = new HashMap<String, Integer>();
     ResultSet resultSet = null;
     try {
-      LOG.info("Submitting query:\n" + query);
+      LOG.info("Submitting query:\n" + query.trim());
       resultSet = statement.executeQuery(query);
       int columnCount = resultSet.getMetaData().getColumnCount();
       while (resultSet.next()) {
         StringBuilder builder = new StringBuilder();
         for (int i = 1; i <= columnCount; i++) {
           try {
+            if (resultSet.getObject(i) == null) {
+              builder.append("null\t");
+              continue;
+            }
             builder.append(new String(resultSet.getBytes(i)) + "\t");
           } catch (Exception e) {
             builder.append(resultSet.getObject(i) + "\t");
           }
+
         }
         String entry = builder.toString().trim();
         if (map.containsKey(entry)) {
@@ -210,6 +218,43 @@ public class QuerySubmitter {
     String output = scanner.hasNext() ? scanner.next() : "";
     PrintWriter writer = new PrintWriter(outputFileName);
     writer.write(output);
+    writer.close();
+  }
+
+  /**
+   * 
+   * @param queryString
+   * @param type
+   * @throws Exception
+   */
+  public void generatePlan(Statement statement, String inputFileName,
+      String queryString, String type) throws Exception {
+    String query = "explain plan ";
+    String extension = ".p";
+    if (type.equals("logical")) {
+      query += "without implementation ";
+      extension = ".l";
+    }
+    query += "for " + queryString;
+    ResultSet resultSet = null;
+    String planString = "";
+    try {
+      LOG.info("Submitting query:\n" + query.trim());
+      resultSet = statement.executeQuery(query);
+      resultSet.next();
+      resultSet.next();
+      planString = new String(resultSet.getBytes(2));
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
+    String planFileName = inputFileName.substring(0,
+        inputFileName.lastIndexOf('.'))
+        + extension;
+    BufferedWriter writer = new BufferedWriter(new FileWriter(new File(
+        planFileName)));
+    writer.write(planString);
     writer.close();
   }
 }
