@@ -102,7 +102,11 @@ public class QuerySubmitter {
             }
             builder.append(new String(resultSet.getBytes(i)) + "\t");
           } catch (Exception e) {
-            builder.append(resultSet.getObject(i) + "\t");
+            if (resultSet.getMetaData().getColumnType(i) == Types.DATE) {
+              builder.append(resultSet.getDate(i) + "\t");
+            } else {
+              builder.append(resultSet.getObject(i) + "\t");
+            }
           }
 
         }
