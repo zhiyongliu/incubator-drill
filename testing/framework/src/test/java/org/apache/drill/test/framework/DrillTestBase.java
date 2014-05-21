@@ -69,10 +69,17 @@ public class DrillTestBase {
   private static String summaryPassing = "\nPassing Tests:\n==============\n";
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
   private static boolean verified = true;
+  private String optionFile = null;
 
   @BeforeClass
-  public void beforeClass() throws SQLException, ClassNotFoundException {
+  public void beforeClass() throws SQLException, ClassNotFoundException,
+      IOException {
     Class.forName("org.apache.drill.jdbc.Driver");
+    try {
+      optionFile = System.getProperty("option.file");
+    } catch (Exception e) {
+      LOG.info("No option file provided.");
+    }
   }
 
   @AfterClass
@@ -130,6 +137,13 @@ public class DrillTestBase {
         connection = DriverManager.getConnection(url);
         statement = connection.createStatement();
         connectionMap.put(schema, new Pair(connection, statement));
+        if (optionFile != null) {
+          String[] optionQueries = Utils.getSqlStatements(optionFile);
+          for (String optionQuery : optionQueries) {
+            submitter = new QuerySubmitter(schemas[0]);
+            submitter.submitQueryJDBC(optionQuery, statement);
+          }
+        }
       }
     }
     testProcess(modeler.getTestId(), modeler.getDescription(),
@@ -258,18 +272,20 @@ public class DrillTestBase {
                   submitter.executeQueryJDBC(queryString, inputFileNames[i],
                       statement);
                 } else {
+                  if (j != mid) {
+                    submitter.submitQueryJDBC(queryString, statement);
+                    continue;
+                  }
                   if (submitType.equals("jdbc")) {
-                    Map<String, Integer> resultSet = submitter.submitQueryJDBC(
-                        queryString, statement);
-                    if (j == mid) {
-                      query = inputFileNames[i] + " :\n" + queryString;
+                    try {
+                      query = inputFileNames[i] + " : " + queryString;
+                      Map<String, Integer> resultSet = submitter
+                          .submitQueryJDBC(queryString, statement);
                       resultSets.add(resultSet);
-                    }
-                  } else {
-                    if (j != mid) {
-                      submitter.submitQueryJDBC(queryString, statement);
+                    } catch (Exception e) {
                       continue;
                     }
+                  } else {
                     if (submitType.equals("gen-physical")) {
                       submitter.generatePlan(statement, inputFileNames[i],
                           queryString, "physical");
