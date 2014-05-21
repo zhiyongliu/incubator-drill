@@ -1,0 +1,56 @@
+{
+    "testId": "textRead",
+    "type": "group",
+    "description": "Test text read queries",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDir",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+	    {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitem.tbl",
+        "dest": "text_storage/lineitem.tbl"
+    	},
+	    {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitem.tsv",
+        "dest": "text_storage/lineitem.tsv"
+    	},
+	    {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitem",
+        "dest": "text_storage/lineitem/"
+    	},
+	    {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitempart",
+        "dest": "text_storage/lineitempart/"
+    	},
+        {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitemsingle",
+        "dest": "text_storage/lineitemsingle/"
+    	},
+        {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitem.tbl.gz",
+        "dest": "text_storage/lineitem.tbl.gz"
+    	},
+        {
+        "mode": "cp",
+        "src": "text_storage/datasources/lineitem.tbl.bz2",
+        "dest": "text_storage/lineitem.tbl.bz2"
+    	}
+    ]
+}

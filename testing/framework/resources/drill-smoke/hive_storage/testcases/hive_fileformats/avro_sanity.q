@@ -1,1 +1,1 @@
-SELECT first_name FROM doctors ORDER BY `number`;
+SELECT first_name FROM doctors;
