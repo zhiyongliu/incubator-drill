@@ -300,6 +300,7 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
                   inputFileNames[i], outputFileNames[i], queryType);
             } else {
               String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
+	      LOG.info("Query file\n" + inputFileNames[i]);
               int mid = queryStrings.length / 2;
               for (int j = 0; j < queryStrings.length; j++) {
                 String queryString = queryStrings[j];
