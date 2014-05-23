@@ -1,0 +1,62 @@
+{
+    "testId": "views-dfs-parquet",
+    "type": "group",
+    "description": "Test views in drill using parquet as the format ",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirViews",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "views/datasources/rankings.parquet",
+            "dest": "views/dfs/parquet/rankings/rankings.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/uservisits.parquet",
+            "dest": "views/dfs/parquet/uservisits/uservisits.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/rankings.json",
+            "dest": "views/dfs/json/rankings/rankings.json"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/uservisits.json",
+            "dest": "views/dfs/json/uservisits/uservisits.json"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/rankings.txt",
+            "dest": "views/hive/rankings/rankings.txt"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/uservisits.txt",
+            "dest": "views/hive/uservisits/uservisits.txt"
+        },
+        {
+            "mode": "cp",
+            "src": "views/datasources/pages.txt",
+            "dest": "views/hive/pages/pages.txt"
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHive.sh resources/views/datasources/hive.ddl",
+           "dest": ""
+        }
+    ]
+}
