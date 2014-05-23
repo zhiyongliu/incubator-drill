@@ -30,6 +30,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.lang.ProcessBuilder;
+import java.io.File;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -70,6 +75,7 @@ public class DrillTestBase {
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
   private static boolean verified = true;
   private String optionFile = null;
+  private boolean restartDrillBit=false;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
@@ -77,6 +83,11 @@ public class DrillTestBase {
     Class.forName("org.apache.drill.jdbc.Driver");
     try {
       optionFile = System.getProperty("option.file");
+    } catch (Exception e) {
+      LOG.info("No option file provided.");
+    }
+    try {
+      restartDrillBit = Boolean.parseBoolean(System.getProperty("restart_between_query"));
     } catch (Exception e) {
       LOG.info("No option file provided.");
     }
@@ -100,6 +111,29 @@ public class DrillTestBase {
     LOG.info(summaryFailed);
   }
 
+  public void restartDrillBit() throws Exception {
+
+String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
+                ProcessBuilder pb = new ProcessBuilder(command);
+                //pb.directory(new File("/root/drillAutomation"));
+                 Process p = pb.start();
+                BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line;
+
+    System.out.println("Output of running " + command + " is: ");
+    while ((line = br.readLine()) != null) {
+        System.out.println(line);
+    }
+
+
+
+
+
+
+
+
+  }
+
   /**
    * Processes TestCaseModeler and passes information contained therein for test
    * execution.
@@ -109,6 +143,8 @@ public class DrillTestBase {
    * @throws Exception
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
+    if(restartDrillBit)
+	    restartDrillBit();
     List<TestCaseModeler.TestMatrix> matrices = modeler.getMatrices();
     String[] inputFileNames = new String[matrices.size()];
     String[] schemas = new String[matrices.size()];
