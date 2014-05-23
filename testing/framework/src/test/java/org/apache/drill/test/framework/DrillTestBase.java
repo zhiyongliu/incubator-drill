@@ -166,7 +166,7 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
     prepareData(datasources);
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
-      if (!connectionMap.containsKey(schema)) {
+      if (!connectionMap.containsKey(schema) || restartDrillBit) {
         String url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.info("Connecting to " + url);
