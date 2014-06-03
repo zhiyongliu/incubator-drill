@@ -1,0 +1,114 @@
+{
+  "storage":{
+    dfs: {
+      type: "file",
+      connection: "maprfs:///",
+      workspaces: {
+        "root" : {
+          location: "/",
+          writable: false
+        },
+        "tmp" : {
+          location: "/tmp",
+          writable: true,
+          storageformat: "csv"
+        },
+        "drillTestDir" : {
+          location: "/drill/testdata/",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirAmplab" : {
+          location: "/drill/testdata/amplab",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirP1" : {
+          location: "/drill/testdata/p1tests",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirExchanges" : {
+          location: "/drill/testdata/exchanges_test",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirExplicit" : {
+          location: "/drill/testdata/explicit_cast",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirInformationSchema" : {
+          location: "/drill/testdata/information_schema",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirInformationSchemaHbase" : {
+          location: "/drill/testdata/information_schema",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirViews" : {
+          location: "/drill/testdata/views",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirUdfs" : {
+          location: "/drill/testdata/udfs",
+          writable: true,
+          storageformat: "parquet"
+        },
+        "drillTestDirDatetime" : {
+          location: "/drill/testdata/datetime/datasources/",
+          writable: true,
+          storageformat: "parquet"
+        }
+      },
+      formats: {
+        "psv" : {
+          type: "text",
+          extensions: [ "tbl" ],
+          delimiter: "|"
+        },
+        "csv" : {
+          type: "text",
+          extensions: [ "csv" ],
+          delimiter: ","
+        },
+        "tsv" : {
+          type: "text",
+          extensions: [ "tsv" ],
+          delimiter: "\t"
+        },
+        "parquet" : {
+          type: "parquet"
+        },
+        "json" : {
+          type: "json"
+        }
+      }
+    },
+    cp: {
+      type: "file",
+      connection: "classpath:///"
+    },
+    hive : {
+        type:"hive",
+        config :
+          {
+            "hive.metastore.uris" : "thrift://10.10.100.190:9083",
+            "javax.jdo.option.ConnectionURL" :"jdbc:mysql://10.10.100.190:3306/hive?createDatabaseIfNotExist=true", 
+            "hive.metastore.warehouse.dir" : "/user/hive/warehouse",
+            "fs.default.name" : "maprfs:///",
+            "hive.metastore.sasl.enabled" : "false"
+          }
+      },
+    hbase : {
+      type:"hbase",
+      config : {
+        "hbase.zookeeper.quorum" : "10.10.100.190",
+        "hbase.zookeeper.property.clientPort" : 5181
+      }
+    }
+  }
+}

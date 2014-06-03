@@ -1,0 +1,13 @@
+DRILL	hive.marketing	
+DRILL	hive	
+DRILL	dfs.drillTestDirInformationSchema	
+DRILL	dfs.home	
+DRILL	dfs.drillTestDir	
+DRILL	dfs.drillTestDirAmplab	
+DRILL	dfs.drillTestDirP1	
+DRILL	dfs.drillTestDirTpch	
+DRILL	dfs	
+DRILL	cp	
+DRILL	hbase	
+DRILL	sys	
+DRILL	INFORMATION_SCHEMA	

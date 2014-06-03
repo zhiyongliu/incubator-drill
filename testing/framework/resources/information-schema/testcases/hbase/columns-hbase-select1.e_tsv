@@ -1,0 +1,3 @@
+DRILL	hbase	students	cf1	0	YES	ANY	-1	-1	-1
+DRILL	hbase	students	cf2	1	YES	ANY	-1	-1	-1
+DRILL	hbase	students	cf3	2	YES	ANY	-1	-1	-1

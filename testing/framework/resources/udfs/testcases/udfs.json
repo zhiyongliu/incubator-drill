@@ -1,0 +1,32 @@
+{
+    "testId": "udfs",
+    "type": "group",
+    "description": "Test UDF functions",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirUdfs",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "udfs/datasources/rankings.parquet",
+            "dest": "udfs/rankings/rankings.parquet"
+        },
+        {
+            "mode": "cp",
+            "src": "udfs/datasources/uservisits.parquet",
+            "dest": "udfs/uservisits/uservisits.parquet"
+        }
+    ]
+}
