@@ -55,6 +55,9 @@ public class TestVerifier {
   public static boolean fileComparisonVerify(String expectedOutput,
       String actualOutput) throws IOException, InterruptedException {
     Map<ColumnList, Integer> expectedMap = loadFromFileToMap(expectedOutput);
+    if (expectedMap == null) {
+      return false;
+    }
     Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
     List<ColumnList> unexpectedList = new ArrayList<ColumnList>();
     int unexpectedCount = 0;
@@ -105,9 +108,14 @@ public class TestVerifier {
    */
   public static Map<ColumnList, Integer> loadFromFileToMap(String filename)
       throws IOException {
+    List<Object> types = ColumnList.getTypes();
+    if (types == null) {
+      LOG.error("Fatal: Types in the result set is null.  "
+          + "This most likely resulted from failed execution.");
+      return null;
+    }
     Map<ColumnList, Integer> map = new RelaxedMap<ColumnList, Integer>();
     BufferedReader reader = new BufferedReader(new FileReader(filename));
-    List<Object> types = ColumnList.getTypes();
     String line = "";
     while ((line = reader.readLine()) != null) {
       line.trim();

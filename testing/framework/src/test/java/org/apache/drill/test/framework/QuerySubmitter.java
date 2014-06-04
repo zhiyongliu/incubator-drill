@@ -245,7 +245,6 @@ public class QuerySubmitter {
     }
     ResultSet resultSet = null;
     try {
-      LOG.info("Submitting query:\n" + query.trim());
       resultSet = statement.executeQuery(query);
       if (outputFilename == null) {
         return;
