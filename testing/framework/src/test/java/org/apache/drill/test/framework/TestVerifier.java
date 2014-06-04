@@ -140,7 +140,9 @@ public class TestVerifier {
       }
       ColumnList cl = new ColumnList(typedFields);
       if (map.containsKey(cl)) {
-        map.put(cl, map.get(cl) + 1);
+        map.put(
+            cl,
+            map.get(((RelaxedMap<ColumnList, Integer>) map).getMatchingKey()) + 1);
       } else {
         map.put(cl, 1);
       }
