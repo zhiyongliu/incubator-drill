@@ -17,7 +17,9 @@
  */
 package org.apache.drill.test.framework;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -30,11 +32,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.lang.ProcessBuilder;
-import java.io.File;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -75,7 +72,7 @@ public class DrillTestBase {
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
   private static boolean verified = true;
   private String optionFile = null;
-  private boolean restartDrillBit=false;
+  private boolean restartDrillBit = false;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
@@ -87,7 +84,8 @@ public class DrillTestBase {
       LOG.info("No option file provided.");
     }
     try {
-      restartDrillBit = Boolean.parseBoolean(System.getProperty("restart_between_query"));
+      restartDrillBit = Boolean.parseBoolean(System
+          .getProperty("restart_between_query"));
     } catch (Exception e) {
       LOG.info("No option file provided.");
     }
@@ -111,27 +109,19 @@ public class DrillTestBase {
     LOG.info(summaryFailed);
   }
 
-  public void restartDrillBit() throws Exception {
-
-String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
-                ProcessBuilder pb = new ProcessBuilder(command);
-                //pb.directory(new File("/root/drillAutomation"));
-                 Process p = pb.start();
-                BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                String line;
+  private void restartDrillBit() throws Exception {
+    String[] command = { "/bin/bash",
+        "/root/drillAutomation/restartDrillBit.sh" };
+    ProcessBuilder pb = new ProcessBuilder(command);
+    Process p = pb.start();
+    BufferedReader br = new BufferedReader(new InputStreamReader(
+        p.getInputStream()));
+    String line;
 
     System.out.println("Output of running " + command + " is: ");
     while ((line = br.readLine()) != null) {
-        System.out.println(line);
+      System.out.println(line);
     }
-
-
-
-
-
-
-
-
   }
 
   /**
@@ -143,8 +133,9 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
    * @throws Exception
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
-    if(restartDrillBit)
-	    restartDrillBit();
+    if (restartDrillBit) {
+      restartDrillBit();
+    }
     List<TestCaseModeler.TestMatrix> matrices = modeler.getMatrices();
     String[] inputFileNames = new String[matrices.size()];
     String[] schemas = new String[matrices.size()];
@@ -228,7 +219,7 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
         outputFormats);
     submitter = new QuerySubmitter(schemas[0]);
     Date date1 = new Date();
-    List<Map<String, Integer>> resultSets = new ArrayList<Map<String, Integer>>();
+    List<Map<ColumnList, Integer>> resultSets = new ArrayList<Map<ColumnList, Integer>>();
     LOG.info("Query submit start time: " + dateFormat.format(date1));
     RunThread runThread = new RunThread(submitType, inputFileNames,
         outputFileNames, queryType, resultSets, verificationTypes);
@@ -251,12 +242,11 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
     if (submitType.equals("sqlline")) {
       verified = true;
     } else if (submitType.equals("submit_plan")) {
-      verified = verified
-          && verifySubmitPlanSubmitType(expectedFiles, outputFileNames);
+      verified = verified && verifyAllOutputs(expectedFiles, outputFileNames);
     } else if (submitType.equals("jdbc")) {
       if (verificationTypes != null && verificationTypes.length != 0
           && !verificationTypes[0].equalsIgnoreCase("none")) {
-        verified = verified && verifyJdbcSubmitType(expectedFiles, resultSets);
+        verified = verified && verifyAllOutputs(expectedFiles, outputFileNames);
       }
     }
     if (verified) {
@@ -272,17 +262,15 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
     String[] inputFileNames;
     String[] outputFileNames;
     String queryType;
-    List<Map<String, Integer>> resultSets;
     String[] verificationTypes;
 
     public RunThread(String submitType, String[] inputFileNames,
         String[] outputFileNames, String queryType,
-        List<Map<String, Integer>> resultSets, String[] verificationTypes) {
+        List<Map<ColumnList, Integer>> resultSets, String[] verificationTypes) {
       this.submitType = submitType;
       this.inputFileNames = inputFileNames;
       this.outputFileNames = outputFileNames;
       this.queryType = queryType;
-      this.resultSets = resultSets;
       this.verificationTypes = verificationTypes;
     }
 
@@ -300,7 +288,6 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
                   inputFileNames[i], outputFileNames[i], queryType);
             } else {
               String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
-	      LOG.info("Query file\n" + inputFileNames[i]);
               int mid = queryStrings.length / 2;
               for (int j = 0; j < queryStrings.length; j++) {
                 String queryString = queryStrings[j];
@@ -309,16 +296,17 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
                   submitter.executeQueryJDBC(queryString, inputFileNames[i],
                       statement);
                 } else {
+                  LOG.info("Submitting query:\n" + inputFileNames[i] + " : "
+                      + queryString);
                   if (j != mid) {
                     submitter.submitQueryJDBC(queryString, statement);
                     continue;
                   }
                   if (submitType.equals("jdbc")) {
+                    query = inputFileNames[i] + " : " + queryString;
                     try {
-                      query = inputFileNames[i] + " : " + queryString;
-                      Map<String, Integer> resultSet = submitter
-                          .submitQueryJDBC(queryString, statement);
-                      resultSets.add(resultSet);
+                      submitter.submitQueryJDBC(queryString, statement,
+                          outputFileNames[i]);
                     } catch (Exception e) {
                       continue;
                     }
@@ -338,7 +326,6 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
         }
       } catch (Exception e) {
         verified = false;
-        e.printStackTrace();
       }
     }
   }
@@ -356,29 +343,13 @@ String[] command = {"/bin/bash", "/root/drillAutomation/restartDrillBit.sh"};
     return outputFileNames;
   }
 
-  private boolean verifySubmitPlanSubmitType(String[] expectedOutputs,
+  private boolean verifyAllOutputs(String[] expectedOutputs,
       String[] actualOutputs) throws IOException, InterruptedException {
     boolean verified = true;
     for (int i = 0; i < expectedOutputs.length; i++) {
       verified = verified
           && TestVerifier.fileComparisonVerify(expectedOutputs[i],
               actualOutputs[i]);
-      if (!verified) {
-        return verified;
-      }
-    }
-    return true;
-  }
-
-  private boolean verifyJdbcSubmitType(String[] expectedFiles,
-      List<Map<String, Integer>> resultSets) throws IOException, SQLException {
-    if (resultSets.isEmpty()) {
-      return false;
-    }
-    boolean verified = true;
-    for (int i = 0; i < expectedFiles.length; i++) {
-      verified = verified
-          && TestVerifier.resultSetVerify(expectedFiles[i], resultSets.get(i));
       if (!verified) {
         return verified;
       }

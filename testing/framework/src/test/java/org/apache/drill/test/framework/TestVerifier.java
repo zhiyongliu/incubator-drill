@@ -18,12 +18,12 @@
 package org.apache.drill.test.framework;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.Types;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -54,25 +54,27 @@ public class TestVerifier {
    */
   public static boolean fileComparisonVerify(String expectedOutput,
       String actualOutput) throws IOException, InterruptedException {
-    Map<String, Integer> expectedMap = getExpectedMap(expectedOutput);
-    List<String> unexpectedList = new ArrayList<String>();
-    BufferedReader reader = new BufferedReader(new FileReader(new File(
-        actualOutput)));
-    String line = reader.readLine();
-    String record = reader.readLine().trim();
+    Map<ColumnList, Integer> expectedMap = loadFromFileToMap(expectedOutput);
+    Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
+    List<ColumnList> unexpectedList = new ArrayList<ColumnList>();
     int unexpectedCount = 0;
-    while ((line = reader.readLine()) != null) {
-      if (!check(expectedMap, record)) {
-        if (unexpectedCount < MAX_MISMATCH_SIZE) {
-          unexpectedList.add(record);
-          unexpectedCount++;
-        }
+    Iterator<Map.Entry<ColumnList, Integer>> iterator = actualMap.entrySet()
+        .iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<ColumnList, Integer> entry = iterator.next();
+      ColumnList cl = entry.getKey();
+      int count = entry.getValue();
+      while (count > 0 && check(expectedMap, cl)) {
+        count--;
       }
-      record = line.trim();
+      if (count > 0) {
+        unexpectedList.add(cl);
+        unexpectedCount = count;
+      }
     }
-    reader.close();
     printSummary(unexpectedList, unexpectedCount, expectedMap);
     return expectedMap.isEmpty() && unexpectedList.isEmpty();
+
   }
 
   /**
@@ -94,89 +96,69 @@ public class TestVerifier {
   }
 
   /**
-   * Verifies output of a query. The verification is done by checking the map
-   * (from a ResultSet from a query) against its corresponding expected file.
+   * Loads content of a result set file into a RelaxedMap object.
    * 
-   * @param expectedFile
-   *          file with expected results
-   * @param actualMap
-   *          map constructed from an actual ResultSet object
-   * @return true if the map contains all and only entries in the expected file.
+   * @param filename
+   *          name of file containing result sets
+   * @return RelaxedMap of result set
    * @throws IOException
-   * @throws SQLException
    */
-  public static boolean resultSetVerify(String expectedFile,
-      Map<String, Integer> actualMap) throws IOException, SQLException {
-    if (actualMap == null) {
-      LOG.warn("ResultSet is null from query.");
-      return false;
-    }
-    Map<String, Integer> expectedMap = getExpectedMap(expectedFile);
-    Map<String, Integer> unexpectedMap = new HashMap<String, Integer>();
-    for (Map.Entry<String, Integer> entry : actualMap.entrySet()) {
-      String key = entry.getKey();
-      if (expectedMap.containsKey(key)) {
-        int diff = expectedMap.get(key) - entry.getValue();
-        if (diff == 0) {
-          expectedMap.remove(key);
-        } else if (diff > 0) {
-          expectedMap.put(key, expectedMap.get(key) - 1);
-        } else {
-          if (!unexpectedMap.containsKey(key)) {
-            unexpectedMap.put(key, Math.abs(diff));
-          } else {
-            unexpectedMap.put(key, unexpectedMap.get(key) + Math.abs(diff));
-          }
-        }
-      } else {
-        if (unexpectedMap.containsKey(key)) {
-          unexpectedMap.put(key, unexpectedMap.get(key) + entry.getValue());
-        } else {
-          unexpectedMap.put(key, entry.getValue());
-        }
-      }
-    }
-    if (unexpectedMap.isEmpty() && expectedMap.isEmpty()) {
-      return true;
-    } else {
-      printSummary(unexpectedMap, expectedMap);
-      return false;
-    }
-  }
-
-  private static Map<String, Integer> getExpectedMap(String filename)
+  public static Map<ColumnList, Integer> loadFromFileToMap(String filename)
       throws IOException {
-    Map<String, Integer> map = new HashMap<String, Integer>();
+    Map<ColumnList, Integer> map = new RelaxedMap<ColumnList, Integer>();
     BufferedReader reader = new BufferedReader(new FileReader(filename));
+    List<Object> types = ColumnList.getTypes();
     String line = "";
     while ((line = reader.readLine()) != null) {
       line.trim();
-      if (map.containsKey(line)) {
-        map.put(line, map.get(line) + 1);
+      String[] fields = line.split("\t");
+      Object[] typedFields = new Object[fields.length];
+      for (int i = 0; i < fields.length; i++) {
+        int type = (Integer) (types.get(i));
+        switch (type) {
+        case Types.FLOAT:
+          typedFields[i] = Float.parseFloat(fields[i]);
+          break;
+        case Types.DOUBLE:
+          typedFields[i] = Double.parseDouble(fields[i]);
+          break;
+        case Types.DECIMAL:
+          typedFields[i] = new BigDecimal(fields[i]);
+          break;
+        default:
+          typedFields[i] = fields[i];
+          break;
+        }
+      }
+      ColumnList cl = new ColumnList(typedFields);
+      if (map.containsKey(cl)) {
+        map.put(cl, map.get(cl) + 1);
       } else {
-        map.put(line, 1);
+        map.put(cl, 1);
       }
     }
     reader.close();
     return map;
   }
 
-  private static boolean check(Map<String, Integer> map, String entry) {
+  private static boolean check(Map<ColumnList, Integer> map, ColumnList entry) {
     if (map.containsKey(entry)) {
-      map.put(entry, map.get(entry) - 1);
-      if (map.get(entry) == 0) {
-        map.remove(entry);
+      ColumnList matchingKey = ((RelaxedMap<ColumnList, Integer>) map)
+          .getMatchingKey();
+      map.put(matchingKey, map.get(matchingKey) - 1);
+      if (map.get(matchingKey) == 0) {
+        map.remove(matchingKey);
       }
       return true;
     }
     return false;
   }
 
-  private static void printSummary(List<String> unexpectedList,
-      int unexpectedCount, Map<String, Integer> expectedMap) {
+  private static void printSummary(List<ColumnList> unexpectedList,
+      int unexpectedCount, Map<ColumnList, Integer> expectedMap) {
     if (!unexpectedList.isEmpty()) {
       LOG.info("These rows are not expected:");
-      for (String row : unexpectedList) {
+      for (ColumnList row : unexpectedList) {
         LOG.info("\t" + row);
       }
       LOG.info("Total number of unexpected rows: " + unexpectedCount);
@@ -185,7 +167,7 @@ public class TestVerifier {
     if (!expectedMap.isEmpty()) {
       LOG.info("These rows are expected but are not in result set:");
       int count = 0;
-      for (Map.Entry<String, Integer> entry : expectedMap.entrySet()) {
+      for (Map.Entry<ColumnList, Integer> entry : expectedMap.entrySet()) {
         LOG.info("\t" + entry.getKey() + " (" + entry.getValue() + " time(s))");
         count++;
         if (count == MAX_MISMATCH_SIZE) {
@@ -193,38 +175,6 @@ public class TestVerifier {
         }
       }
       LOG.info("Total number of expected but missing: " + unexpectedCount);
-    }
-  }
-
-  private static void printSummary(Map<String, Integer> unexpectedMap,
-      Map<String, Integer> expectedMap) {
-    int count = 0;
-    if (!unexpectedMap.isEmpty()) {
-      LOG.info("These rows are not expected:");
-      for (Map.Entry<String, Integer> entry : unexpectedMap.entrySet()) {
-        if (count < MAX_MISMATCH_SIZE) {
-          LOG.info("\t" + entry.getKey() + " : " + entry.getValue()
-              + " time(s).");
-          count++;
-        } else {
-          break;
-        }
-      }
-      LOG.info("Total number of unexpected rows: " + unexpectedMap.size());
-    }
-    count = 0;
-    if (!expectedMap.isEmpty()) {
-      LOG.info("These rows are expected but are not in result set:");
-      for (Map.Entry<String, Integer> entry : expectedMap.entrySet()) {
-        if (count < MAX_MISMATCH_SIZE) {
-          LOG.info("\t" + entry.getKey() + " : " + entry.getValue()
-              + " time(s).");
-          count++;
-        } else {
-          break;
-        }
-      }
-      LOG.info("Total number of expected but missing: " + expectedMap.size());
     }
   }
 }
