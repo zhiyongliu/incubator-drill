@@ -27,9 +27,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
@@ -85,45 +82,9 @@ public class QuerySubmitter {
    * @return Map of query results and their occurrences
    * @throws Exception
    */
-  public Map<String, Integer> submitQueryJDBC(String query, Statement statement)
+  public void submitQueryJDBC(String query, Statement statement)
       throws Exception {
-    Map<String, Integer> map = new HashMap<String, Integer>();
-    ResultSet resultSet = null;
-    try {
-      LOG.info("Submitting query:\n" + query.trim());
-      resultSet = statement.executeQuery(query);
-      int columnCount = resultSet.getMetaData().getColumnCount();
-      while (resultSet.next()) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 1; i <= columnCount; i++) {
-          try {
-            if (resultSet.getObject(i) == null) {
-              builder.append("null\t");
-              continue;
-            }
-            builder.append(new String(resultSet.getBytes(i)) + "\t");
-          } catch (Exception e) {
-            if (resultSet.getMetaData().getColumnType(i) == Types.DATE) {
-              builder.append(resultSet.getDate(i) + "\t");
-            } else {
-              builder.append(resultSet.getObject(i) + "\t");
-            }
-          }
-
-        }
-        String entry = builder.toString().trim();
-        if (map.containsKey(entry)) {
-          map.put(entry, map.get(entry) + 1);
-        } else {
-          map.put(entry, 1);
-        }
-      }
-      return map;
-    } finally {
-      if (resultSet != null) {
-        resultSet.close();
-      }
-    }
+    submitQueryJDBC(query, statement, null);
   }
 
   /**
@@ -229,7 +190,9 @@ public class QuerySubmitter {
   /**
    * 
    * @param queryString
+   *          query to generate plans for
    * @param type
+   *          physical or logical
    * @throws Exception
    */
   public void generatePlan(Statement statement, String inputFileName,
@@ -261,5 +224,66 @@ public class QuerySubmitter {
         planFileName)));
     writer.write(planString);
     writer.close();
+  }
+
+  /**
+   * Submits query via JDBC
+   * 
+   * @param query
+   *          SQL query string
+   * @param statement
+   *          sql statement to execute the query with
+   * @param outputFilename
+   *          name of file result set is to be written to
+   * @throws Exception
+   */
+  public void submitQueryJDBC(String query, Statement statement,
+      String outputFilename) throws Exception {
+    BufferedWriter writer = null;
+    if (outputFilename != null) {
+      writer = new BufferedWriter(new FileWriter(new File(outputFilename)));
+    }
+    ResultSet resultSet = null;
+    try {
+      resultSet = statement.executeQuery(query);
+      if (outputFilename == null) {
+        return;
+      }
+      int columnCount = resultSet.getMetaData().getColumnCount();
+      Object[] types = new Object[columnCount];
+      for (int i = 1; i <= columnCount; i++) {
+        types[i - 1] = resultSet.getMetaData().getColumnType(i);
+      }
+      ColumnList.setTypes(types);
+      while (resultSet.next()) {
+        Object[] values = new Object[columnCount];
+        for (int i = 1; i <= columnCount; i++) {
+          try {
+            if (resultSet.getObject(i) == null) {
+              values[i - 1] = null;
+              continue;
+            }
+            values[i - 1] = new String(resultSet.getBytes(i));
+          } catch (Exception e) {
+            if (resultSet.getMetaData().getColumnType(i) == Types.DATE) {
+              values[i - 1] = resultSet.getDate(i);
+            } else {
+              values[i - 1] = resultSet.getObject(i);
+            }
+          }
+        }
+        ColumnList columnList = new ColumnList(values);
+        if (writer != null) {
+          writer.write(columnList + "\n");
+        }
+      }
+      if (writer != null) {
+        writer.close();
+      }
+    } finally {
+      if (resultSet != null) {
+        resultSet.close();
+      }
+    }
   }
 }
