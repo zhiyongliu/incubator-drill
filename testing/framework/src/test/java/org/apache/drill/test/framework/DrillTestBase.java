@@ -61,7 +61,7 @@ public class DrillTestBase {
       .get("DRILL_HOME") + "/bin/sqlline";
   private static final String SUBMIT_PLAN_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/submit_plan";
-  private static final int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
+  private static int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
   private Connection connection = null;
   private Statement statement = null;
@@ -89,6 +89,12 @@ public class DrillTestBase {
     } catch (Exception e) {
       LOG.info("No option file provided.");
     }
+    try {
+      TIME_OUT_SECONDS = Integer.parseInt(System.getProperty("timeout"));
+    } catch (Exception e) {
+      LOG.info("No timeout specified");
+    }
+
   }
 
   @AfterClass
@@ -227,7 +233,7 @@ public class DrillTestBase {
     runThread.start();
     runThread.join(TIME_OUT_SECONDS * 1000);
     if (runThread.isAlive()) {
-      LOG.warn("Drill didn't complete query within " + TIME_OUT_SECONDS
+      LOG.warn("Query did not complete in " + TIME_OUT_SECONDS
           + " seconds.");
       verified = false;
       timedOut = true;
@@ -367,9 +373,10 @@ public class DrillTestBase {
       LOG.info("Test " + testId + " was successfully verified.");
     } else {
       if (!timedOut) {
-        Assert.fail("Verification of test " + testId + " failed.");
+        Assert.fail("Test " + testId + " failed.");
       } else {
-        Assert.fail("Test failed through timeout.");
+        Assert.fail("Query did not complete in " + TIME_OUT_SECONDS
+          + " seconds.");
       }
     }
     LOG.info("Test " + testId + " completed.");
