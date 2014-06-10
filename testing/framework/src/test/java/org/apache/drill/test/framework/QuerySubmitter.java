@@ -255,6 +255,10 @@ public class QuerySubmitter {
         types[i - 1] = resultSet.getMetaData().getColumnType(i);
       }
       ColumnList.setTypes(types);
+      LOG.info("Types in this result set:\n");
+      for (Object type : types) {
+        LOG.info("\t" + type);
+      }
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {

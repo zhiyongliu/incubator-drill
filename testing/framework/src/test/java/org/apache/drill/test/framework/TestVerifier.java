@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +115,7 @@ public class TestVerifier {
           + "This most likely resulted from failed execution.");
       return null;
     }
-    Map<ColumnList, Integer> map = new RelaxedMap<ColumnList, Integer>();
+    Map<ColumnList, Integer> map = new HashMap<ColumnList, Integer>();
     BufferedReader reader = new BufferedReader(new FileReader(filename));
     String line = "";
     while ((line = reader.readLine()) != null) {
@@ -140,9 +141,7 @@ public class TestVerifier {
       }
       ColumnList cl = new ColumnList(typedFields);
       if (map.containsKey(cl)) {
-        map.put(
-            cl,
-            map.get(((RelaxedMap<ColumnList, Integer>) map).getMatchingKey()) + 1);
+        map.put(cl, map.get(map.get(cl)) + 1);
       } else {
         map.put(cl, 1);
       }
@@ -153,11 +152,9 @@ public class TestVerifier {
 
   private static boolean check(Map<ColumnList, Integer> map, ColumnList entry) {
     if (map.containsKey(entry)) {
-      ColumnList matchingKey = ((RelaxedMap<ColumnList, Integer>) map)
-          .getMatchingKey();
-      map.put(matchingKey, map.get(matchingKey) - 1);
-      if (map.get(matchingKey) == 0) {
-        map.remove(matchingKey);
+      map.put(entry, map.get(entry) - 1);
+      if (map.get(entry) == 0) {
+        map.remove(entry);
       }
       return true;
     }
@@ -166,17 +163,22 @@ public class TestVerifier {
 
   private static void printSummary(List<ColumnList> unexpectedList,
       int unexpectedCount, Map<ColumnList, Integer> expectedMap) {
+    int count = 0;
     if (!unexpectedList.isEmpty()) {
       LOG.info("These rows are not expected:");
       for (ColumnList row : unexpectedList) {
         LOG.info("\t" + row);
+        count++;
+        if (count == MAX_MISMATCH_SIZE) {
+          break;
+        }
       }
-      LOG.info("Total number of unexpected rows: " + unexpectedCount);
+      LOG.info("Total number of unexpected rows: " + unexpectedList.size());
     }
     unexpectedCount = expectedMap.size();
     if (!expectedMap.isEmpty()) {
       LOG.info("These rows are expected but are not in result set:");
-      int count = 0;
+      count = 0;
       for (Map.Entry<ColumnList, Integer> entry : expectedMap.entrySet()) {
         LOG.info("\t" + entry.getKey() + " (" + entry.getValue() + " time(s))");
         count++;
