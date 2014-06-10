@@ -87,8 +87,22 @@ public class ColumnList {
 
   @Override
   public int hashCode() {
+    if (list == null || types == null) {
+      return 0;
+    }
     int hash = 3;
-    hash = 37 * hash + (this.list != null ? this.list.hashCode() : 0);
+    for (int i = 0; i < types.size(); i++) {
+      int type = (Integer) (types.get(i));
+      switch (type) {
+      case Types.FLOAT:
+      case Types.DOUBLE:
+      case Types.DECIMAL:
+        break;
+      default:
+        hash += list.get(i).hashCode();
+        break;
+      }
+    }
     return hash;
   }
 
@@ -127,7 +141,7 @@ public class ColumnList {
         result = result && bd1.compareTo(bd2) == 0;
         break;
       default:
-        result = list1.get(i).equals(list2.get(i));
+        result = result && list1.get(i).equals(list2.get(i));
         break;
       }
     }
