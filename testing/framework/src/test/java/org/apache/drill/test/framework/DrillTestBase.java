@@ -94,7 +94,6 @@ public class DrillTestBase {
     } catch (Exception e) {
       LOG.info("No timeout specified");
     }
-
   }
 
   @AfterClass
@@ -164,7 +163,7 @@ public class DrillTestBase {
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
       if (!connectionMap.containsKey(schema) || restartDrillBit) {
-	restartDrillBit();
+        restartDrillBit();
         String url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.info("Connecting to " + url);
@@ -233,8 +232,7 @@ public class DrillTestBase {
     runThread.start();
     runThread.join(TIME_OUT_SECONDS * 1000);
     if (runThread.isAlive()) {
-      LOG.warn("Query did not complete in " + TIME_OUT_SECONDS
-          + " seconds.");
+      LOG.warn("Query did not complete in " + TIME_OUT_SECONDS + " seconds.");
       verified = false;
       timedOut = true;
       runThread.interrupt();
@@ -376,7 +374,7 @@ public class DrillTestBase {
         Assert.fail("Test " + testId + " failed.");
       } else {
         Assert.fail("Query did not complete in " + TIME_OUT_SECONDS
-          + " seconds.");
+            + " seconds.");
       }
     }
     LOG.info("Test " + testId + " completed.");
