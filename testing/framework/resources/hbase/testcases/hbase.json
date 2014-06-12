@@ -1,0 +1,31 @@
+{
+    "testId": “hbase”,
+    "type": "group",
+    "description": "Test hbase queries via jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+       {
+           "mode": "cp",
+           "src": "p1tests/datasources/student.parquet",
+           "dest": "student"
+       },
+       {
+           "mode": "cp",
+           "src": "p1tests/datasources/voter.parquet",
+           "dest": "voter"
+       }
+   ]
+}
