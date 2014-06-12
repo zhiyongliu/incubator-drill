@@ -128,12 +128,21 @@ public class ColumnList {
       case Types.FLOAT:
         float f1 = (Float) list1.get(i);
         float f2 = (Float) list2.get(i);
-        result = result && Math.abs(f1 - f2) / ((f1 + f2) / 2) < 0.000001;
+        if ((f1 + f2) / 2 != 0) {
+          result = result && Math.abs(f1 - f2) / ((f1 + f2) / 2) < 0.000001;
+        } else if (f1 != 0) {
+          result = false;
+        }
         break;
       case Types.DOUBLE:
         double d1 = (Double) list1.get(i);
         double d2 = (Double) list2.get(i);
-        result = result && Math.abs(d1 - d2) / ((d1 + d2) / 2) < 0.000000000001;
+        if ((d1 + d2) / 2 != 0) {
+          result = result
+              && Math.abs(d1 - d2) / ((d1 + d2) / 2) < 0.000000000001;
+        } else if (d1 != 0) {
+          result = false;
+        }
         break;
       case Types.DECIMAL:
         BigDecimal bd1 = (BigDecimal) list1.get(i);

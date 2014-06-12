@@ -1,0 +1,86 @@
+{
+    "testId": "parquetRead",
+    "type": "group",
+    "description": "Test parquet read queries",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDir",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer.parquet",
+        "dest": "parquet_storage/customer.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer_nonull.dict.parquet",
+        "dest": "parquet_storage/customer_nonull.dict.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer_nonull.parquet",
+        "dest": "parquet_storage/customer_nonull.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer.dict.parquet",
+        "dest": "parquet_storage/customer.dict.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation.parquet",
+        "dest": "parquet_storage/nation.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation.parquet",
+        "dest": "parquet_storage/testDir/nation.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation_nonull.dict.parquet",
+        "dest": "parquet_storage/nation_nonull.dict.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation_nonull.plain.parquet",
+        "dest": "parquet_storage/nation_nonull.plain.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation.dict.parquet",
+        "dest": "parquet_storage/nation.dict.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer.impala.parquet",
+        "dest": "parquet_storage/customer.impala.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer_alltypes.plain.parquet",
+        "dest": "parquet_storage/customer_alltypes.plain.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/customer_snappyimpala.parquet",
+        "dest": "parquet_storage/customer_snappyimpala.parquet"
+    	},
+	    {
+        "mode": "cp",
+        "src": "parquet_storage/datasources/nation_gzip.impala.parquet",
+        "dest": "parquet_storage/nation_gzip.impala.parquet"
+    	}    	    	    	    	
+    ]
+}
