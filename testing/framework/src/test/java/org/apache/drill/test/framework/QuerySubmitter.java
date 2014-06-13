@@ -245,7 +245,13 @@ public class QuerySubmitter {
     }
     ResultSet resultSet = null;
     try {
-      resultSet = statement.executeQuery(query);
+      try {
+        resultSet = statement.executeQuery(query);
+      } catch (Exception e) {
+        TestVerifier.testStatus = TestVerifier.TEST_STATUS.EXECUTION_FAILURE;
+        LOG.error("Fatal: execution of query failed.  Result set size: 0.", e);
+        throw e;
+      }
       if (outputFilename == null) {
         return;
       }

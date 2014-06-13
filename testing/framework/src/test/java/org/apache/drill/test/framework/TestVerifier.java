@@ -40,6 +40,11 @@ public class TestVerifier {
   private static final int MAX_MISMATCH_SIZE = 10;
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
+  public static TEST_STATUS testStatus = TEST_STATUS.UNASSIGNED;
+
+  public enum TEST_STATUS {
+    PASS, EXECUTION_FAILURE, VERIFICATION_FAILURE, TIMEOUT, UNASSIGNED
+  };
 
   /**
    * Verifies output of a query. The verification is performed by comparing the
@@ -53,13 +58,18 @@ public class TestVerifier {
    * @throws IOException
    * @throws InterruptedException
    */
-  public static boolean fileComparisonVerify(String expectedOutput,
+  public static TEST_STATUS fileComparisonVerify(String expectedOutput,
       String actualOutput) throws IOException, InterruptedException {
+    if (testStatus == TEST_STATUS.EXECUTION_FAILURE) {
+      return testStatus;
+    }
     Map<ColumnList, Integer> expectedMap = loadFromFileToMap(expectedOutput);
     if (expectedMap == null) {
-      return false;
+      return TEST_STATUS.EXECUTION_FAILURE;
     }
     Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
+    LOG.info("Size of expected result set: " + expectedMap.size());
+    LOG.info("Size of result set from Drill: " + actualMap.size());
     List<ColumnList> unexpectedList = new ArrayList<ColumnList>();
     int unexpectedCount = 0;
     Iterator<Map.Entry<ColumnList, Integer>> iterator = actualMap.entrySet()
@@ -77,7 +87,8 @@ public class TestVerifier {
       }
     }
     printSummary(unexpectedList, unexpectedCount, expectedMap);
-    return expectedMap.isEmpty() && unexpectedList.isEmpty();
+    return expectedMap.isEmpty() && unexpectedList.isEmpty() ? TEST_STATUS.PASS
+        : TEST_STATUS.VERIFICATION_FAILURE;
 
   }
 

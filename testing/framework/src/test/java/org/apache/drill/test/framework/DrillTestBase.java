@@ -70,7 +70,6 @@ public class DrillTestBase {
   private static String query = "";
   private static String summaryPassing = "\nPassing Tests:\n==============\n";
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
-  private static boolean verified = true;
   private String optionFile = null;
   private boolean restartDrillBit = false;
 
@@ -138,6 +137,7 @@ public class DrillTestBase {
    * @throws Exception
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
+    TestVerifier.testStatus = TestVerifier.TEST_STATUS.PASS;
     if (restartDrillBit) {
       restartDrillBit();
     }
@@ -217,8 +217,6 @@ public class DrillTestBase {
       String queryType, String[] inputFileNames, String[] outputFormats,
       String[] expectedFiles, String[] schemas, String[] verificationTypes)
       throws Exception {
-    verified = true;
-    boolean timedOut = false;
     logTestStart(testId, testDesc);
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
@@ -233,11 +231,10 @@ public class DrillTestBase {
     runThread.join(TIME_OUT_SECONDS * 1000);
     if (runThread.isAlive()) {
       LOG.warn("Query did not complete in " + TIME_OUT_SECONDS + " seconds.");
-      verified = false;
-      timedOut = true;
+      TestVerifier.testStatus = TestVerifier.TEST_STATUS.TIMEOUT;
       runThread.interrupt();
       summaryFailed += "***[timedout] " + query + "\n";
-      logTestEnd(testId, verified, timedOut);
+      logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
     Date date2 = new Date();
@@ -245,21 +242,29 @@ public class DrillTestBase {
     LOG.info("The execution time for the query: "
         + Utils.getDateDiff(date2, date1, "second") + " seconds.");
     if (submitType.equals("sqlline")) {
-      verified = true;
+      TestVerifier.testStatus = TestVerifier.TEST_STATUS.PASS;
     } else if (submitType.equals("submit_plan")) {
-      verified = verified && verifyAllOutputs(expectedFiles, outputFileNames);
+      verifyAllOutputs(expectedFiles, outputFileNames);
     } else if (submitType.equals("jdbc")) {
       if (verificationTypes != null && verificationTypes.length != 0
           && !verificationTypes[0].equalsIgnoreCase("none")) {
-        verified = verified && verifyAllOutputs(expectedFiles, outputFileNames);
+        verifyAllOutputs(expectedFiles, outputFileNames);
       }
     }
-    if (verified) {
+    switch (TestVerifier.testStatus) {
+    case PASS:
       summaryPassing += "*** " + query + "\n";
-    } else {
-      summaryFailed += "*** " + query + "\n";
+      break;
+    case EXECUTION_FAILURE:
+      summaryFailed += "***[execution failure] " + query + "\n";
+      break;
+    case VERIFICATION_FAILURE:
+      summaryFailed += "***[verification failure] " + query + "\n";
+      break;
+    default:
+      break;
     }
-    logTestEnd(testId, verified, timedOut);
+    logTestEnd(testId, TestVerifier.testStatus);
   }
 
   private class RunThread extends Thread {
@@ -308,7 +313,7 @@ public class DrillTestBase {
                     continue;
                   }
                   if (submitType.equals("jdbc")) {
-                    query = inputFileNames[i] + " : " + queryString;
+                    query = inputFileNames[i];
                     try {
                       submitter.submitQueryJDBC(queryString, statement,
                           outputFileNames[i]);
@@ -330,7 +335,6 @@ public class DrillTestBase {
           }
         }
       } catch (Exception e) {
-        verified = false;
       }
     }
   }
@@ -348,37 +352,48 @@ public class DrillTestBase {
     return outputFileNames;
   }
 
-  private boolean verifyAllOutputs(String[] expectedOutputs,
+  private void verifyAllOutputs(String[] expectedOutputs,
       String[] actualOutputs) throws IOException, InterruptedException {
-    boolean verified = true;
-    for (int i = 0; i < expectedOutputs.length; i++) {
-      verified = verified
-          && TestVerifier.fileComparisonVerify(expectedOutputs[i],
-              actualOutputs[i]);
-      if (!verified) {
-        return verified;
+    if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.PASS) {
+      for (int i = 0; i < expectedOutputs.length; i++) {
+        TestVerifier.TEST_STATUS status = TestVerifier.fileComparisonVerify(
+            expectedOutputs[i], actualOutputs[i]);
+        if (status != TestVerifier.TEST_STATUS.PASS) {
+          TestVerifier.testStatus = status;
+          break;
+        }
       }
     }
-    return true;
   }
 
   private void logTestStart(String testId, String testDesc) throws IOException {
     LOG.info("+===========================================");
   }
 
-  private void logTestEnd(String testId, boolean verified, boolean timedOut) {
-    if (verified) {
-      LOG.info("Test " + testId + " was successfully verified.");
-    } else {
-      if (!timedOut) {
-        Assert.fail("Test " + testId + " failed.");
-      } else {
-        Assert.fail("Query did not complete in " + TIME_OUT_SECONDS
-            + " seconds.");
-      }
+  private void logTestEnd(String testId, TestVerifier.TEST_STATUS status) {
+    String message = "";
+    switch (status) {
+    case PASS:
+      message = "Test " + testId + " was successfully verified.";
+      break;
+    case EXECUTION_FAILURE:
+      message = "Test " + testId + " was not executed successfully.";
+      break;
+    case VERIFICATION_FAILURE:
+      message = "Test " + testId + " failed with verification.";
+      break;
+    case TIMEOUT:
+      message = "Query did not complete in " + TIME_OUT_SECONDS + " seconds.";
+      break;
+    default:
+      break;
     }
+    LOG.info(message);
     LOG.info("Test " + testId + " completed.");
     LOG.info("+===========================================");
+    if (status != TestVerifier.TEST_STATUS.PASS) {
+      Assert.fail(message);
+    }
   }
 
   private void hdfsCopy(String src, String dest, boolean overWrite)
