@@ -1,5 +1,5 @@
 {
-    "testId": “hbase”,
+    "testId": "hbase",
     "type": "group",
     "description": "Test hbase queries via jdbc",
     "categories": [
@@ -8,7 +8,7 @@
     "matrices": [
         {
             "query-file": ".*.q",
-            "schema": "dfs",
+            "schema": "hbase",
             "output-format": "tsv",
             "expected-file": ".*.e_tsv",
             "verification-type": [
@@ -19,13 +19,18 @@
     "datasources": [
        {
            "mode": "cp",
-           "src": "p1tests/datasources/student.parquet",
-           "dest": "student"
+           "src": "hbase/datasources/studenttab",
+           "dest": "/drill/testdata/hbase"
        },
        {
            "mode": "cp",
-           "src": "p1tests/datasources/voter.parquet",
-           "dest": "voter"
+           "src": "hbase/datasources/votertab",
+           "dest": "/drill/testdata/hbase"
+       },
+       {
+           "mode": "gen",
+           "src": "hbase/datasources/hbase.sh",
+           "dest": ""
        }
    ]
 }
