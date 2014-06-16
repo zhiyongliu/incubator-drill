@@ -163,7 +163,8 @@ public class DrillTestBase {
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
       if (!connectionMap.containsKey(schema) || restartDrillBit) {
-        restartDrillBit();
+        if (!restartDrillBit)
+        	restartDrillBit();
         String url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.info("Connecting to " + url);
