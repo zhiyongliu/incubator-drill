@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Date;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
@@ -257,10 +258,15 @@ public class QuerySubmitter {
       }
       int columnCount = resultSet.getMetaData().getColumnCount();
       Object[] types = new Object[columnCount];
+      Map<Integer, String> typesMap = Utils.getSqlTypesMap();
+      StringBuilder builder = new StringBuilder();
       for (int i = 1; i <= columnCount; i++) {
         types[i - 1] = resultSet.getMetaData().getColumnType(i);
+        builder.append(typesMap.get(types[i - 1]) + "\t");
       }
       ColumnList.setTypes(types);
+      LOG.info("Result set data types:");
+      LOG.info("\t" + builder.toString().trim());
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {

@@ -163,8 +163,9 @@ public class DrillTestBase {
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
       if (!connectionMap.containsKey(schema) || restartDrillBit) {
-        if (!restartDrillBit)
-        	restartDrillBit();
+        if (!restartDrillBit) {
+          restartDrillBit();
+        }
         String url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.info("Connecting to " + url);
@@ -353,8 +354,8 @@ public class DrillTestBase {
     return outputFileNames;
   }
 
-  private void verifyAllOutputs(String[] expectedOutputs,
-      String[] actualOutputs) throws IOException, InterruptedException {
+  private void verifyAllOutputs(String[] expectedOutputs, String[] actualOutputs)
+      throws IOException, InterruptedException {
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.PASS) {
       for (int i = 0; i < expectedOutputs.length; i++) {
         TestVerifier.TEST_STATUS status = TestVerifier.fileComparisonVerify(

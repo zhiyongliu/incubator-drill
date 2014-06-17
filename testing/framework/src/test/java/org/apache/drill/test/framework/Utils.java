@@ -21,6 +21,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.sql.Types;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -139,5 +141,22 @@ public class Utils {
       }
     }
     return statements;
+  }
+
+  /**
+   * Constructs a map of integer value and its type name for sql Types.
+   * 
+   * @return map of Integer and Types string
+   * @throws IllegalArgumentException
+   * @throws IllegalAccessException
+   */
+  public static final Map<Integer, String> getSqlTypesMap()
+      throws IllegalArgumentException, IllegalAccessException {
+    Map<Integer, String> map = new HashMap<Integer, String>();
+    Field[] fields = Types.class.getDeclaredFields();
+    for (int i = 0; i < fields.length; i++) {
+      map.put((Integer) fields[i].get(Types.class), fields[i].getName());
+    }
+    return map;
   }
 }
