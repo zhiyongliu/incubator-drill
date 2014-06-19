@@ -93,7 +93,6 @@ fi
 command="mvn clean test -Dtest=org.apache.drill.test.framework.DrillTests#$category"
 
 if [ -n "$defSources" ]; then
-    echo "getting defSource......."
     command=$command" -Dtest.def.sources=$defSources"
 fi
 

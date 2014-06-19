@@ -17,9 +17,8 @@
  */
 package org.apache.drill.test.framework;
 
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -80,18 +79,18 @@ public class DrillTestBase {
     try {
       optionFile = System.getProperty("option.file");
     } catch (Exception e) {
-      LOG.info("No option file provided.");
+      LOG.debug("No option file provided.");
     }
     try {
       restartDrillBit = Boolean.parseBoolean(System
           .getProperty("restart_between_query"));
     } catch (Exception e) {
-      LOG.info("No option file provided.");
+      LOG.debug("No option file provided.");
     }
     try {
       TIME_OUT_SECONDS = Integer.parseInt(System.getProperty("timeout"));
     } catch (Exception e) {
-      LOG.info("No timeout specified");
+      LOG.debug("No timeout specified");
     }
   }
 
@@ -114,18 +113,15 @@ public class DrillTestBase {
   }
 
   private void restartDrillBit() throws Exception {
-    String[] command = { "/bin/bash",
-        "/root/drillAutomation/restartDrillBit.sh" };
+    final String restartScript = "/root/drillAutomation/restartDrillBit.sh";
+    if (!new File(restartScript).exists()) {
+      return;
+    }
+    String[] command = { "/bin/bash", restartScript };
+    LOG.info("Restarting drillbits");
     ProcessBuilder pb = new ProcessBuilder(command);
     Process p = pb.start();
-    BufferedReader br = new BufferedReader(new InputStreamReader(
-        p.getInputStream()));
-    String line;
-
-    System.out.println("Output of running " + command + " is: ");
-    while ((line = br.readLine()) != null) {
-      System.out.println(line);
-    }
+    p.wait();
   }
 
   /**
@@ -168,7 +164,7 @@ public class DrillTestBase {
         }
         String url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
-        LOG.info("Connecting to " + url);
+        LOG.debug("Connecting to " + url);
         connection = DriverManager.getConnection(url);
         statement = connection.createStatement();
         connectionMap.put(schema, new Pair(connection, statement));
@@ -224,25 +220,18 @@ public class DrillTestBase {
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
         outputFormats);
     submitter = new QuerySubmitter(schemas[0]);
-    Date date1 = new Date();
     List<Map<ColumnList, Integer>> resultSets = new ArrayList<Map<ColumnList, Integer>>();
-    LOG.info("Query submit start time: " + dateFormat.format(date1));
     RunThread runThread = new RunThread(submitType, inputFileNames,
         outputFileNames, queryType, resultSets, verificationTypes);
     runThread.start();
     runThread.join(TIME_OUT_SECONDS * 1000);
     if (runThread.isAlive()) {
-      LOG.warn("Query did not complete in " + TIME_OUT_SECONDS + " seconds.");
       TestVerifier.testStatus = TestVerifier.TEST_STATUS.TIMEOUT;
       runThread.interrupt();
       summaryFailed += "***[timedout] " + query + "\n";
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
-    Date date2 = new Date();
-    LOG.info("Query submit end time: " + dateFormat.format(date2));
-    LOG.info("The execution time for the query: "
-        + Utils.getDateDiff(date2, date1, "second") + " seconds.");
     if (submitType.equals("sqlline")) {
       TestVerifier.testStatus = TestVerifier.TEST_STATUS.PASS;
     } else if (submitType.equals("submit_plan")) {
@@ -308,8 +297,7 @@ public class DrillTestBase {
                   submitter.executeQueryJDBC(queryString, inputFileNames[i],
                       statement);
                 } else {
-                  LOG.info("Submitting query:\n" + inputFileNames[i] + " : "
-                      + queryString);
+                  LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
                   if (j != mid) {
                     submitter.submitQueryJDBC(queryString, statement);
                     continue;
@@ -369,30 +357,31 @@ public class DrillTestBase {
   }
 
   private void logTestStart(String testId, String testDesc) throws IOException {
-    LOG.info("+===========================================");
+    LOG.info("\n\n+===========================================+");
+    LOG.info("Test_Started: " + dateFormat.format(new Date()));
   }
 
   private void logTestEnd(String testId, TestVerifier.TEST_STATUS status) {
     String message = "";
     switch (status) {
-    case PASS:
-      message = "Test " + testId + " was successfully verified.";
-      break;
     case EXECUTION_FAILURE:
-      message = "Test " + testId + " was not executed successfully.";
+      message = "Failed to execute.";
       break;
     case VERIFICATION_FAILURE:
-      message = "Test " + testId + " failed with verification.";
+      message = "Verification failed.";
       break;
     case TIMEOUT:
-      message = "Query did not complete in " + TIME_OUT_SECONDS + " seconds.";
+      message = "Timeout of " + TIME_OUT_SECONDS + " seconds exceeded.";
       break;
     default:
       break;
     }
-    LOG.info(message);
-    LOG.info("Test " + testId + " completed.");
-    LOG.info("+===========================================");
+    if (status != TestVerifier.TEST_STATUS.PASS) {
+      LOG.info("\nTest_Failed: " + dateFormat.format(new Date()) + " - "
+          + message);
+    }
+    LOG.info("END of Test");
+    LOG.info("+===========================================+\n\n\n");
     if (status != TestVerifier.TEST_STATUS.PASS) {
       Assert.fail(message);
     }
@@ -406,7 +395,7 @@ public class DrillTestBase {
     if (!fs.exists(destPath) || overWrite) {
       fs.copyFromLocalFile(false, overWrite, srcPath, destPath);
     } else {
-      LOG.info("The source file " + src
+      LOG.debug("The source file " + src
           + " already exists in destination.  Skipping the copy.");
     }
   }

@@ -123,6 +123,10 @@ public class ColumnList {
     List<Object> list1 = o1.list;
     List<Object> list2 = o2.list;
     for (int i = 0; i < list1.size(); i++) {
+      if (types == null || types.size() == 0) {
+        result = result && list1.get(i).equals(list2.get(i));
+        continue;
+      }
       int type = (Integer) (types.get(i));
       switch (type) {
       case Types.FLOAT:

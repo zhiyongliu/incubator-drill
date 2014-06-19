@@ -67,9 +67,9 @@ public class TestVerifier {
     if (expectedMap == null) {
       return TEST_STATUS.EXECUTION_FAILURE;
     }
+    int expectedCount = expectedMap.size();
     Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
-    LOG.info("Size of expected result set: " + expectedMap.size());
-    LOG.info("Size of result set from Drill: " + actualMap.size());
+    int actualCount = actualMap.size();
     List<ColumnList> unexpectedList = new ArrayList<ColumnList>();
     int unexpectedCount = 0;
     Iterator<Map.Entry<ColumnList, Integer>> iterator = actualMap.entrySet()
@@ -86,28 +86,11 @@ public class TestVerifier {
         unexpectedCount = count;
       }
     }
-    printSummary(unexpectedList, unexpectedCount, expectedMap);
+    printSummary(unexpectedList, unexpectedCount, expectedMap, expectedCount,
+        actualCount);
     return expectedMap.isEmpty() && unexpectedList.isEmpty() ? TEST_STATUS.PASS
         : TEST_STATUS.VERIFICATION_FAILURE;
 
-  }
-
-  /**
-   * Verifies output of a query. The verification is performed using map-reduce.
-   * This is used when the query output does not have consistent ordering, and
-   * is too large for in-memory verifications.
-   * 
-   * @param expectedOutput
-   *          name of file containing expected output data
-   * @param actualOutput
-   *          name of file containing actual output data
-   * @return true if the outputs are identical
-   * @throws IOException
-   */
-  // TODO need to implement this
-  public static boolean mapReduceVerify(String expectedOutput,
-      String actualOutput) throws IOException {
-    return false;
   }
 
   /**
@@ -122,7 +105,7 @@ public class TestVerifier {
       throws IOException {
     List<Object> types = ColumnList.getTypes();
     if (types == null) {
-      LOG.error("Fatal: Types in the result set is null.  "
+      LOG.debug("Fatal: Types in the result set is null.  "
           + "This most likely resulted from failed execution.");
       return null;
     }
@@ -134,6 +117,10 @@ public class TestVerifier {
       String[] fields = line.split("\t");
       Object[] typedFields = new Object[fields.length];
       for (int i = 0; i < fields.length; i++) {
+        if (types.size() == 0) {
+          typedFields[i] = fields[i];
+          continue;
+        }
         int type = (Integer) (types.get(i));
         switch (type) {
         case Types.FLOAT:
@@ -173,10 +160,22 @@ public class TestVerifier {
   }
 
   private static void printSummary(List<ColumnList> unexpectedList,
-      int unexpectedCount, Map<ColumnList, Integer> expectedMap) {
+      int unexpectedCount, Map<ColumnList, Integer> expectedMap,
+      int expectedCount, int actualCount) {
+    if (expectedMap.size() == 0 && unexpectedList.size() == 0) {
+      LOG.info("\nTest passed.");
+      return;
+    }
+    LOG.info("         Expected number of rows: " + expectedCount);
+    LOG.info("Actual number of rows from Drill: " + actualCount);
+    LOG.info("         Number of matching rows: "
+        + (expectedCount - expectedMap.size()));
+    LOG.info("          Number of rows missing: " + expectedMap.size());
+    LOG.info("       Number of rows unexpected: " + unexpectedList.size());
     int count = 0;
     if (!unexpectedList.isEmpty()) {
-      LOG.info("These rows are not expected:");
+      LOG.info("\nThese rows are not expected (first " + MAX_MISMATCH_SIZE
+          + "):");
       for (ColumnList row : unexpectedList) {
         LOG.info("\t" + row);
         count++;
@@ -184,11 +183,10 @@ public class TestVerifier {
           break;
         }
       }
-      LOG.info("Total number of unexpected rows: " + unexpectedList.size());
     }
     unexpectedCount = expectedMap.size();
     if (!expectedMap.isEmpty()) {
-      LOG.info("These rows are expected but are not in result set:");
+      LOG.info("\nThese rows are missing (first " + MAX_MISMATCH_SIZE + "):");
       count = 0;
       for (Map.Entry<ColumnList, Integer> entry : expectedMap.entrySet()) {
         LOG.info("\t" + entry.getKey() + " (" + entry.getValue() + " time(s))");
@@ -197,7 +195,6 @@ public class TestVerifier {
           break;
         }
       }
-      LOG.info("Total number of expected but missing: " + unexpectedCount);
     }
   }
 }

@@ -69,7 +69,7 @@ public class QuerySubmitter {
     String command = sqllineCommand
         + " -n admin -p admin -u jdbc:drill:schema=" + schema + " -f "
         + queryFileName;
-    LOG.info("Executing " + command + ".");
+    LOG.debug("Executing " + command + ".");
     Runtime.getRuntime().exec(command).waitFor();
   }
 
@@ -178,7 +178,7 @@ public class QuerySubmitter {
     String command = submitPlanCommand + " -f " + queryFileName
         + " --format tsv -t " + queryType + " -z "
         + Utils.getDrillTestProperties().get("ZOOKEEPERS");
-    LOG.info("Executing " + command + ".");
+    LOG.debug("Executing " + command + ".");
     Process p = Runtime.getRuntime().exec(command);
     p.waitFor();
     Scanner scanner = new Scanner(p.getInputStream()).useDelimiter("\\A");
@@ -208,7 +208,7 @@ public class QuerySubmitter {
     ResultSet resultSet = null;
     String planString = "";
     try {
-      LOG.info("Submitting query:\n" + query.trim());
+      LOG.debug("Submitting query:\n" + query.trim());
       resultSet = statement.executeQuery(query);
       resultSet.next();
       resultSet.next();
@@ -250,7 +250,7 @@ public class QuerySubmitter {
         resultSet = statement.executeQuery(query);
       } catch (Exception e) {
         TestVerifier.testStatus = TestVerifier.TEST_STATUS.EXECUTION_FAILURE;
-        LOG.error("Fatal: execution of query failed.  Result set size: 0.", e);
+        LOG.debug("Fatal: execution of query failed.  Result set size: 0.", e);
         throw e;
       }
       if (outputFilename == null) {
@@ -265,8 +265,8 @@ public class QuerySubmitter {
         builder.append(typesMap.get(types[i - 1]) + "\t");
       }
       ColumnList.setTypes(types);
-      LOG.info("Result set data types:");
-      LOG.info("\t" + builder.toString().trim());
+      LOG.debug("Result set data types:");
+      LOG.debug("\t" + builder.toString().trim());
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {
