@@ -41,6 +41,7 @@ public class TestVerifier {
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
   public static TEST_STATUS testStatus = TEST_STATUS.UNASSIGNED;
+  private transient static int mapSize = 0;
 
   public enum TEST_STATUS {
     PASS, EXECUTION_FAILURE, VERIFICATION_FAILURE, TIMEOUT, UNASSIGNED
@@ -67,9 +68,9 @@ public class TestVerifier {
     if (expectedMap == null) {
       return TEST_STATUS.EXECUTION_FAILURE;
     }
-    int expectedCount = expectedMap.size();
+    int expectedCount = mapSize;
     Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
-    int actualCount = actualMap.size();
+    int actualCount = mapSize;
     List<ColumnList> unexpectedList = new ArrayList<ColumnList>();
     int unexpectedCount = 0;
     Iterator<Map.Entry<ColumnList, Integer>> iterator = actualMap.entrySet()
@@ -83,7 +84,7 @@ public class TestVerifier {
       }
       if (count > 0) {
         unexpectedList.add(cl);
-        unexpectedCount = count;
+        unexpectedCount += count;
       }
     }
     printSummary(unexpectedList, unexpectedCount, expectedMap, expectedCount,
@@ -112,6 +113,7 @@ public class TestVerifier {
     Map<ColumnList, Integer> map = new HashMap<ColumnList, Integer>();
     BufferedReader reader = new BufferedReader(new FileReader(filename));
     String line = "";
+    mapSize = 0;
     while ((line = reader.readLine()) != null) {
       line.trim();
       String[] fields = line.split("\t");
@@ -122,19 +124,23 @@ public class TestVerifier {
           continue;
         }
         int type = (Integer) (types.get(i));
-        switch (type) {
-        case Types.FLOAT:
-          typedFields[i] = Float.parseFloat(fields[i]);
-          break;
-        case Types.DOUBLE:
-          typedFields[i] = Double.parseDouble(fields[i]);
-          break;
-        case Types.DECIMAL:
-          typedFields[i] = new BigDecimal(fields[i]);
-          break;
-        default:
+        try {
+          switch (type) {
+          case Types.FLOAT:
+            typedFields[i] = Float.parseFloat(fields[i]);
+            break;
+          case Types.DOUBLE:
+            typedFields[i] = Double.parseDouble(fields[i]);
+            break;
+          case Types.DECIMAL:
+            typedFields[i] = new BigDecimal(fields[i]);
+            break;
+          default:
+            typedFields[i] = fields[i];
+            break;
+          }
+        } catch (Exception e) {
           typedFields[i] = fields[i];
-          break;
         }
       }
       ColumnList cl = new ColumnList(typedFields);
@@ -143,6 +149,7 @@ public class TestVerifier {
       } else {
         map.put(cl, 1);
       }
+      mapSize++;
     }
     reader.close();
     return map;
@@ -162,15 +169,16 @@ public class TestVerifier {
   private static void printSummary(List<ColumnList> unexpectedList,
       int unexpectedCount, Map<ColumnList, Integer> expectedMap,
       int expectedCount, int actualCount) {
-    if (expectedMap.size() == 0 && unexpectedList.size() == 0) {
+    int missingCount = getMissingCount(expectedMap);
+    if (missingCount == 0 && unexpectedList.size() == 0) {
       LOG.info("\nTest passed.");
       return;
     }
     LOG.info("         Expected number of rows: " + expectedCount);
     LOG.info("Actual number of rows from Drill: " + actualCount);
     LOG.info("         Number of matching rows: "
-        + (expectedCount - expectedMap.size()));
-    LOG.info("          Number of rows missing: " + expectedMap.size());
+        + (expectedCount - missingCount));
+    LOG.info("          Number of rows missing: " + missingCount);
     LOG.info("       Number of rows unexpected: " + unexpectedList.size());
     int count = 0;
     if (!unexpectedList.isEmpty()) {
@@ -184,7 +192,6 @@ public class TestVerifier {
         }
       }
     }
-    unexpectedCount = expectedMap.size();
     if (!expectedMap.isEmpty()) {
       LOG.info("\nThese rows are missing (first " + MAX_MISMATCH_SIZE + "):");
       count = 0;
@@ -196,5 +203,14 @@ public class TestVerifier {
         }
       }
     }
+  }
+  
+  private static int getMissingCount(Map<ColumnList, Integer> map) {
+    int missingCount = 0;
+    Iterator<Integer> iterator = map.values().iterator();
+    while (iterator.hasNext()) {
+      missingCount += iterator.next();
+    }
+    return missingCount;
   }
 }
