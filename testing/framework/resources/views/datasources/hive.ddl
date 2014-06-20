@@ -49,3 +49,15 @@ ROW FORMAT DELIMITED FIELDS
 TERMINATED BY ','
 STORED AS TEXTFILE LOCATION "/drill/testdata/information-schema/students/";
 
+DROP TABLE IF EXISTS VOTER;
+CREATE EXTERNAL TABLE VOTER (
+    voter_id INT,
+    name string,
+    age tinyint,
+    registration string,
+    contributions float,
+    voterzone smallint,
+    create_time timestamp
+) 
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+STORED AS TEXTFILE LOCATION "/drill/testdata/views/hive/voter/";

@@ -1,0 +1,32 @@
+{
+    "testId": "views-hive-text",
+    "type": "group",
+    "description": "Test views in drill created against a hive table ",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirViews",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "views/datasources/voter.txt",
+            "dest": "views/hive/voter/voter.txt"
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHive.sh resources/views/datasources/hive.ddl",
+           "dest": ""
+        }
+    ]
+}

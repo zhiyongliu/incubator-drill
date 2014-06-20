@@ -1,0 +1,27 @@
+{
+    "testId": "views-dfs-text",
+    "type": "group",
+    "description": "Test views in drill using text as the format ",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirViews",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+            "mode": "cp",
+            "src": "views/datasources/rankings.txt",
+            "dest": "views/dfs/text/rankings/rankings.tbl"
+        }
+    ]
+}
