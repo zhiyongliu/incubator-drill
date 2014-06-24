@@ -27,7 +27,6 @@ import java.util.List;
  */
 public class TestCaseModeler {
   private String testId;
-  private String type;
   private String description;
   private String submitType = "jdbc";
   private String queryType = "sql";
@@ -45,17 +44,15 @@ public class TestCaseModeler {
    * Constructor with various fields.
    * 
    * @param testId
-   * @param type
    * @param description
    * @param categories
    * @param matrices
    * @param datasources
    */
-  public TestCaseModeler(String testId, String type, String description,
+  public TestCaseModeler(String testId, String description,
       List<String> categories, List<TestMatrix> matrices,
       List<DataSource> datasources) {
     this.testId = testId;
-    this.type = type;
     this.description = description;
     this.categories = categories;
     this.matrices = matrices;
@@ -66,7 +63,6 @@ public class TestCaseModeler {
    * Constructor with various fields.
    * 
    * @param testId
-   * @param type
    * @param description
    * @param submitType
    * @param queryType
@@ -74,10 +70,10 @@ public class TestCaseModeler {
    * @param matrices
    * @param datasources
    */
-  public TestCaseModeler(String testId, String type, String description,
+  public TestCaseModeler(String testId, String description,
       String submitType, String queryType, List<String> categories,
       List<TestMatrix> matrices, List<DataSource> datasources) {
-    this(testId, type, description, categories, matrices, datasources);
+    this(testId, description, categories, matrices, datasources);
     if (submitType != null) {
       this.submitType = submitType;
     }
@@ -88,10 +84,6 @@ public class TestCaseModeler {
 
   public String getTestId() {
     return testId;
-  }
-
-  public String getType() {
-    return type;
   }
 
   public String getDescription() {
@@ -119,8 +111,7 @@ public class TestCaseModeler {
   }
 
   public String toString() {
-    String result = "Test Id: " + testId + "\nTest Type: " + type
-        + "\nTest Description: " + description;
+    String result = "Test Id: " + testId + "\nTest Description: " + description;
     if (submitType != null) {
       result += "\nSubmit Type: " + submitType;
     }

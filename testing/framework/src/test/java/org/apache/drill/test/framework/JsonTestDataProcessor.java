@@ -107,11 +107,10 @@ public class JsonTestDataProcessor {
    * 
    * @param queryFile
    *          the input query file value to be used. If null, the value is
-   *          obtained from the definition file itself (when an individual test
-   *          case is being handled). If not null, the file takes on the form of
-   *          a regular expression for a class of query files (e.g., .*.q), and
-   *          each of the matching query files will be collected for the
-   *          data-driven engine.
+   *          obtained from the definition file itself. If not null, the file
+   *          takes on the form of a regular expression for a class of query
+   *          files (e.g., .*.q), and each of the matching query files will be
+   *          collected for the data-driven engine.
    * @param expectedFile
    *          similar to queryFile.
    * @return list of TestCaseModeler.TestMatrix objects.
@@ -130,18 +129,9 @@ public class JsonTestDataProcessor {
       }
       if (queryFile == null) {
         queryFile = item.getString("query-file");
-        if (!queryFile.contains("*")) {
-          queryFile = Utils.getDrillTestProperties().get("DRILL_TEST_DATA_DIR")
-              + "/" + item.getString("query-file");
-        }
       }
       if (expectedFile == null) {
         expectedFile = item.getString("expected-file");
-        if (!expectedFile.contains("*")) {
-          expectedFile = Utils.getDrillTestProperties().get(
-              "DRILL_TEST_DATA_DIR")
-              + "/" + item.getString("expected-file");
-        }
       }
       list.add(constructTestMatrix(queryFile, item.getString("schema"),
           item.getString("output-format"), expectedFile, verifications));
@@ -209,7 +199,6 @@ public class JsonTestDataProcessor {
       List<TestCaseModeler.TestMatrix> matrices,
       List<TestCaseModeler.DataSource> datasources) throws JSONException {
     String testId = getSimpleTestParameter("testId");
-    String type = getSimpleTestParameter("type");
     String description = getSimpleTestParameter("description");
     List<String> categories = getListTestParameter("categories");
     String submitType = null;
@@ -222,7 +211,7 @@ public class JsonTestDataProcessor {
       queryType = getSimpleTestParameter("query-type");
     } catch (JSONException e) {
     }
-    return new TestCaseModeler(testId, type, description, submitType,
-        queryType, categories, matrices, datasources);
+    return new TestCaseModeler(testId, description, submitType, queryType,
+        categories, matrices, datasources);
   }
 }

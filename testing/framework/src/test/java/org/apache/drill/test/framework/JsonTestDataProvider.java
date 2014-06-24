@@ -77,53 +77,40 @@ public class JsonTestDataProvider {
       List<File> testDefFiles = searchFiles(testDefSourceFile, ".*.json");
       for (File testDefFile : testDefFiles) {
         processor = new JsonTestDataProcessor(testDefFile.getAbsolutePath());
-        String type = processor.getSimpleTestParameter("type");
         List<String> categories = processor.getListTestParameter("categories");
-        if (type.equals("individual")) {
-          if (testGroups == null) {
-            data.add(new Object[] { processor.constructTestCaseModeler() });
+        boolean foundTests = false;
+        for (String testGroup : testGroups) {
+          if (categories != null && !categories.contains(testGroup)) {
             continue;
+          } else {
+            foundTests = true;
+            break;
           }
-          for (String testGroup : testGroups) {
-            if (categories.contains(testGroup)) {
-              data.add(new Object[] { processor.constructTestCaseModeler() });
-            }
-          }
-        } else if (type.equals("group")) {
-          boolean foundTests = false;
-          for (String testGroup : testGroups) {
-            if (categories != null && !categories.contains(testGroup)) {
-              continue;
-            } else {
-              foundTests = true;
-              break;
-            }
-          }
-          if (!foundTests) {
-            continue;
-          }
-          String queryFileExtension = processor
-              .constructTestMatrices(null, null).get(0).getInputFile();
-          String expectedFileExtension = processor
-              .constructTestMatrices(null, null).get(0).getExpectedFile();
-          List<File> testQueryFiles = searchFiles(testDefFile.getParentFile(),
-              queryFileExtension);
-          boolean checkDatasources = true;
-          for (File testQueryFile : testQueryFiles) {
-            String expectedFileName = getExpectedFile(
-                testQueryFile.getAbsolutePath(), queryFileExtension,
-                expectedFileExtension);
-            List<TestCaseModeler.TestMatrix> matrices = processor
-                .constructTestMatrices(testQueryFile.getAbsolutePath(),
-                    expectedFileName);
-            if (checkDatasources) {
-              data.add(new Object[] { processor
-                  .constructTestCaseModeler(matrices) });
-              checkDatasources = false;
-            } else {
-              data.add(new Object[] { processor.constructTestCaseModeler(
-                  matrices, null) });
-            }
+        }
+        if (!foundTests) {
+          continue;
+        }
+        String queryFileExtension = processor.constructTestMatrices(null, null)
+            .get(0).getInputFile();
+        String expectedFileExtension = processor
+            .constructTestMatrices(null, null).get(0).getExpectedFile();
+        List<File> testQueryFiles = searchFiles(testDefFile.getParentFile(),
+            queryFileExtension);
+        boolean checkDatasources = true;
+        for (File testQueryFile : testQueryFiles) {
+          String expectedFileName = getExpectedFile(
+              testQueryFile.getAbsolutePath(), queryFileExtension,
+              expectedFileExtension);
+          List<TestCaseModeler.TestMatrix> matrices = processor
+              .constructTestMatrices(testQueryFile.getAbsolutePath(),
+                  expectedFileName);
+          if (checkDatasources) {
+            data.add(new Object[] { processor
+                .constructTestCaseModeler(matrices) });
+            checkDatasources = false;
+          } else {
+            data.add(new Object[] { processor.constructTestCaseModeler(
+                matrices, null) });
           }
         }
       }
