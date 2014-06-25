@@ -1,7 +1,7 @@
 # Instructions for running drill tests under the Apache drill test framework
 
 ## Setup and configurations:
-In the file framework/src/main/resources/drillTestConfig.properties, configure test environment as needed:
+### In the file framework/src/main/resources/drillTestConfig.properties, configure test environment as needed:
     1. DRILL_HOME is where drill is installed.
     2. DRILL_TEST_DATA_DIR points to the parent directory of the drill test data.  If a relative path is provided, it is expected to be under framework.
     3. HADOOP_INSTALL_LOC is the location of the hadoop system drill is running in.
@@ -24,7 +24,7 @@ cd to the testing directory, and execute mvn clean install.
             |_ testcases
                |_ testcase1
                  |_ testcase1.q <- this is the raw sql query file
-                 |_ testcase1.e_tsv <- this is the expected result set; tsv indicates the format
+                 |_ testcase1.e <- this is the expected result set
                  |_ testcase1.json <- this is the test case definition file
 
 ## Steps:
@@ -44,18 +44,19 @@ The .json test definition file looks like the following:
 
 <pre><code>
 {
-    "testId": "select",
-    "type": "individual",
-    "description": "Test sending the select query via submit_plan",
+    "testId": "join",
+    "description": "Test join queries via jdbc",
+    "submit-type": "jdbc",
+    "query-type": "sql",
     "categories": [
         "smoke"
     ],
     "matrices": [
         {
-            "query-file": "basic_query/testcases/select/select.q",
-            "schema": "cp",
+            "query-file": ".*.q",
+            "schema": "dfs",
             "output-format": "tsv",
-            "expected-file": "basic_query/testcases/select/select.e_tsv",
+            "expected-file": ".*.e",
             "verification-type": [
                 "in-memory"
             ]
@@ -66,15 +67,19 @@ The .json test definition file looks like the following:
 }
 </code></pre>
 
+"submit-type" specifies the submit type.  Valid values are: jdbc, submit_plan, sqlline.  Optional; if not present, jdbc is used.
+
+"query-type" specifies the query type.  Valid values are: sql, physical, logical.  Optional; if not present, sql is used.
+
 "categories" is a list of tags that a test may belong to.
 
-"query-file" specifies where the .q file is, relative to the resources directory.  An absolute path can also be specified, starting with '/'.
+"query-file" specifies the query file extension; e.g., .*.q.
 
 "schema" indicates which storage engine to use.  Valid values can be "cp", "dfs", and other supported engines by drill.
 
 "output-format" tells the test framework what format the actual result should take, such as "table", "tsv", and "csv".
 
-"expected-file": specifies where the .e file is, relative to the resources directory.  An absolute path can also be specified, starting with '/'.
+"expected-file": specifies the expected file extension; e.g., .*.e.
 
 "verification-type" picks which verification method(s) to use.  For small result sets, in-memory will be used for record-by-record verification.  For large data, we will implement a map-reduce method for verification.  If the list is left empty, no verifications will be performed for the test.
 
