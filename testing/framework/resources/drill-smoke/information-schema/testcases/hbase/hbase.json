@@ -1,0 +1,42 @@
+{
+    "testId": "information-schema-hbase",
+    "type": "group",
+    "description": "Test information schema using hbase as backend",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirInformationSchemaHbase",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+           "mode": "gen",
+           "src": "bin/emptyDrillTables.sh",
+           "dest": ""
+        },
+        {
+           "mode": "gen",
+           "src": "bin/update-hadoop-config.sh resources/information-schema/datasources/hbase.xml",
+           "dest": ""
+        },
+        {
+           "mode": "gen",
+           "src": "bin/drill-restart.sh",
+           "dest": ""
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHBase.sh resources/information-schema/datasources/hbase.ddl",
+           "dest": ""
+        }
+    ]
+}
