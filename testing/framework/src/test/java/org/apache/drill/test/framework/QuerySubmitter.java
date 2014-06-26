@@ -43,6 +43,10 @@ public class QuerySubmitter {
   protected static final Logger LOG = Logger.getLogger(Utils
       .getInvokingClassName());
   private String schema;
+  private static Map<String, String> drillProperties = Utils
+      .getDrillTestProperties();
+  private static int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
+      .get("TIME_OUT_SECONDS"));
 
   /**
    * Constructor with the schema name
@@ -70,7 +74,8 @@ public class QuerySubmitter {
         + " -n admin -p admin -u jdbc:drill:schema=" + schema + " -f "
         + queryFileName;
     LOG.debug("Executing " + command + ".");
-    Runtime.getRuntime().exec(command).waitFor();
+    RunThread runThread = new RunThread(command);
+    processThread(runThread);
   }
 
   /**
@@ -97,7 +102,7 @@ public class QuerySubmitter {
    * @return
    */
   public boolean executeQueryJDBC(String query, String queryFileName,
-      Statement statement) {
+      Statement statement) throws Exception {
     boolean status = true;
     ResultSet resultSet = null;
     long startTime = 0l;
@@ -118,7 +123,12 @@ public class QuerySubmitter {
       // Time to Connect
       connTime = System.currentTimeMillis();
       LOG.info("Connect Time: " + ((connTime - startTime) / 1000f) + " sec");
-      resultSet = statement.executeQuery(query);
+      RunThread runThread = new RunThread(statement, query);
+      boolean success = processThread(runThread);
+      if (!success) {
+        return false;
+      }
+      resultSet = runThread.getResultSet();
       // Time to Execute
       executeTime = System.currentTimeMillis();
       LOG.info("Execute Time: " + ((executeTime - connTime) / 1000f) + " sec");
@@ -179,9 +189,10 @@ public class QuerySubmitter {
         + " --format tsv -t " + queryType + " -z "
         + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     LOG.debug("Executing " + command + ".");
-    Process p = Runtime.getRuntime().exec(command);
-    p.waitFor();
-    Scanner scanner = new Scanner(p.getInputStream()).useDelimiter("\\A");
+    RunThread runThread = new RunThread(command);
+    processThread(runThread);
+    Process process = runThread.getProcess();
+    Scanner scanner = new Scanner(process.getInputStream()).useDelimiter("\\A");
     String output = scanner.hasNext() ? scanner.next() : "";
     PrintWriter writer = new PrintWriter(outputFileName);
     writer.write(output);
@@ -209,7 +220,9 @@ public class QuerySubmitter {
     String planString = "";
     try {
       LOG.debug("Submitting query:\n" + query.trim());
-      resultSet = statement.executeQuery(query);
+      RunThread runThread = new RunThread(statement, query);
+      processThread(runThread);
+      resultSet = runThread.getResultSet();
       resultSet.next();
       resultSet.next();
       planString = new String(resultSet.getBytes(2));
@@ -246,12 +259,11 @@ public class QuerySubmitter {
     }
     ResultSet resultSet = null;
     try {
-      try {
-        resultSet = statement.executeQuery(query);
-      } catch (Exception e) {
-        TestVerifier.testStatus = TestVerifier.TEST_STATUS.EXECUTION_FAILURE;
-        LOG.debug("Fatal: execution of query failed.  Result set size: 0.", e);
-        throw e;
+      RunThread runThread = new RunThread(statement, query);
+      processThread(runThread);
+      resultSet = runThread.getResultSet();
+      if (resultSet == null) {
+        throw runThread.getException();
       }
       if (outputFilename == null) {
         return;
@@ -296,6 +308,63 @@ public class QuerySubmitter {
       if (resultSet != null) {
         resultSet.close();
       }
+    }
+  }
+
+  private boolean processThread(RunThread runThread) throws InterruptedException {
+    runThread.start();
+    runThread.join(TIME_OUT_SECONDS * 1000);
+    if (runThread.isAlive()) {
+      TestVerifier.testStatus = TestVerifier.TEST_STATUS.TIMEOUT;
+      runThread.interrupt();
+      return false;
+    }
+    return true;
+  }
+  
+  private class RunThread extends Thread {
+    private Statement statement;
+    private String query;
+    private String command;
+    private ResultSet resultSet;
+    private Process process;
+    private Exception exception;
+
+    public RunThread(Statement statement, String query) {
+      this.statement = statement;
+      this.query = query;
+    }
+
+    public RunThread(String command) {
+      this.command = command;
+    }
+
+    @Override
+    public void run() {
+      try {
+        if (statement != null) {
+          resultSet = statement.executeQuery(query);
+        } else {
+          process = Runtime.getRuntime().exec(command);
+          process.waitFor();
+        }
+      } catch (Exception e) {
+        TestVerifier.testStatus = TestVerifier.TEST_STATUS.EXECUTION_FAILURE;
+        LOG.debug("Fatal: execution of query failed.  Result set size: 0.", e);
+        this.exception = e;
+      }
+    }
+
+    public ResultSet getResultSet() {
+      return resultSet;
+    }
+
+    public Process getProcess() {
+      return process;
+    }
+    
+    public Exception getException() {
+      return exception;
     }
   }
 }

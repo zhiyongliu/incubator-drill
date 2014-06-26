@@ -169,6 +169,10 @@ public class TestVerifier {
   private static void printSummary(List<ColumnList> unexpectedList,
       int unexpectedCount, Map<ColumnList, Integer> expectedMap,
       int expectedCount, int actualCount) {
+    if (testStatus == TEST_STATUS.EXECUTION_FAILURE
+        || testStatus == TEST_STATUS.TIMEOUT) {
+      return;
+    }
     int missingCount = getMissingCount(expectedMap);
     if (missingCount == 0 && unexpectedList.size() == 0) {
       LOG.info("\nTest passed.");
@@ -204,7 +208,7 @@ public class TestVerifier {
       }
     }
   }
-  
+
   private static int getMissingCount(Map<ColumnList, Integer> map) {
     int missingCount = 0;
     Iterator<Integer> iterator = map.values().iterator();

@@ -26,7 +26,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -120,8 +119,7 @@ public class DrillTestBase {
     String[] command = { "/bin/bash", restartScript };
     LOG.info("Restarting drillbits");
     ProcessBuilder pb = new ProcessBuilder(command);
-    Process p = pb.start();
-    p.wait();
+    pb.start().waitFor();
   }
 
   /**
@@ -220,15 +218,54 @@ public class DrillTestBase {
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
         outputFormats);
     submitter = new QuerySubmitter(schemas[0]);
-    List<Map<ColumnList, Integer>> resultSets = new ArrayList<Map<ColumnList, Integer>>();
-    RunThread runThread = new RunThread(submitType, inputFileNames,
-        outputFileNames, queryType, resultSets, verificationTypes);
-    runThread.start();
-    runThread.join(TIME_OUT_SECONDS * 1000);
-    if (runThread.isAlive()) {
-      TestVerifier.testStatus = TestVerifier.TEST_STATUS.TIMEOUT;
-      runThread.interrupt();
+    if (submitType.equals("sqlline")) {
+      String queries = handler.congregateFiles(CONGREGATED_FILENAME);
+      LOG.info("Submitting queries:\n" + queries);
+      submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
+    } else {
+      for (int i = 0; i < inputFileNames.length; i++) {
+        if (submitType.equals("submit_plan")) {
+          submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
+              inputFileNames[i], outputFileNames[i], queryType);
+        } else {
+          String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
+          int mid = queryStrings.length / 2;
+          for (int j = 0; j < queryStrings.length; j++) {
+            String queryString = queryStrings[j];
+            if (verificationTypes[i] == null
+                || verificationTypes[i].equalsIgnoreCase("none")) {
+              submitter.executeQueryJDBC(queryString, inputFileNames[i],
+                  statement);
+            } else {
+              LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
+              if (j != mid) {
+                submitter.submitQueryJDBC(queryString, statement);
+                continue;
+              }
+              if (submitType.equals("jdbc")) {
+                query = inputFileNames[i];
+                try {
+                  submitter.submitQueryJDBC(queryString, statement,
+                      outputFileNames[i]);
+                } catch (Exception e) {
+                  continue;
+                }
+              } else {
+                submitter.generatePlan(statement, inputFileNames[i],
+                    queryString, submitType);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.TIMEOUT) {
       summaryFailed += "***[timedout] " + query + "\n";
+      logTestEnd(testId, TestVerifier.testStatus);
+      return;
+    }
+    if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.EXECUTION_FAILURE) {
+      summaryFailed += "***[execution failure] " + query + "\n";
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
@@ -246,9 +283,6 @@ public class DrillTestBase {
     case PASS:
       summaryPassing += "*** " + query + "\n";
       break;
-    case EXECUTION_FAILURE:
-      summaryFailed += "***[execution failure] " + query + "\n";
-      break;
     case VERIFICATION_FAILURE:
       summaryFailed += "***[verification failure] " + query + "\n";
       break;
@@ -256,77 +290,6 @@ public class DrillTestBase {
       break;
     }
     logTestEnd(testId, TestVerifier.testStatus);
-  }
-
-  private class RunThread extends Thread {
-    String submitType;
-    String[] inputFileNames;
-    String[] outputFileNames;
-    String queryType;
-    String[] verificationTypes;
-
-    public RunThread(String submitType, String[] inputFileNames,
-        String[] outputFileNames, String queryType,
-        List<Map<ColumnList, Integer>> resultSets, String[] verificationTypes) {
-      this.submitType = submitType;
-      this.inputFileNames = inputFileNames;
-      this.outputFileNames = outputFileNames;
-      this.queryType = queryType;
-      this.verificationTypes = verificationTypes;
-    }
-
-    @Override
-    public void run() {
-      try {
-        if (submitType.equals("sqlline")) {
-          String queries = handler.congregateFiles(CONGREGATED_FILENAME);
-          LOG.info("Submitting queries:\n" + queries);
-          submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
-        } else {
-          for (int i = 0; i < inputFileNames.length; i++) {
-            if (submitType.equals("submit_plan")) {
-              submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
-                  inputFileNames[i], outputFileNames[i], queryType);
-            } else {
-              String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
-              int mid = queryStrings.length / 2;
-              for (int j = 0; j < queryStrings.length; j++) {
-                String queryString = queryStrings[j];
-                if (verificationTypes[i] == null
-                    || verificationTypes[i].equalsIgnoreCase("none")) {
-                  submitter.executeQueryJDBC(queryString, inputFileNames[i],
-                      statement);
-                } else {
-                  LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
-                  if (j != mid) {
-                    submitter.submitQueryJDBC(queryString, statement);
-                    continue;
-                  }
-                  if (submitType.equals("jdbc")) {
-                    query = inputFileNames[i];
-                    try {
-                      submitter.submitQueryJDBC(queryString, statement,
-                          outputFileNames[i]);
-                    } catch (Exception e) {
-                      continue;
-                    }
-                  } else {
-                    if (submitType.equals("gen-physical")) {
-                      submitter.generatePlan(statement, inputFileNames[i],
-                          queryString, "physical");
-                    } else if (submitType.equals("gen-logical")) {
-                      submitter.generatePlan(statement, inputFileNames[i],
-                          queryString, "logical");
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch (Exception e) {
-      }
-    }
   }
 
   private String[] generateOutputFileNames(String[] inputFileNames,
