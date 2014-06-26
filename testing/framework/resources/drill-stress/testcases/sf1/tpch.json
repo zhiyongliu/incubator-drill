@@ -1,5 +1,5 @@
 {
-    "testId": "tpch",
+    "testId": "tpch1",
     "type": "group",
     "description": "Test tpch SF 1 queries via jdbc",
     "categories": [

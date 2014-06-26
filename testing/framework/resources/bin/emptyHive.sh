@@ -4,3 +4,4 @@
 set -e
 
 hive -e 'show tables'|xargs -I '{}' hive -e 'drop table {}'
+hive -e 'use marketing; show tables'|xargs -I '{}' hive -e 'use marketing; drop table {}'

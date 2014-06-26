@@ -1,0 +1,46 @@
+{
+    "testId": "morefiles",
+    "type": "group",
+    "description": "Test drill with many small files",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDir",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/100files",
+        "dest": "stress/100files"
+      },
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/250files",
+        "dest": "stress/250files"
+      },
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/500files",
+        "dest": "stress/500files"
+      },
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/1000files",
+        "dest": "stress/1000files"
+      },
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/5000files",
+        "dest": "stress/5000files"
+      }
+    ]
+}

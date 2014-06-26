@@ -1,13 +1,13 @@
-DRILL	hive.marketing	
-DRILL	hive	
-DRILL	dfs.drillTestDirInformationSchema	
-DRILL	dfs.home	
-DRILL	dfs.drillTestDir	
-DRILL	dfs.drillTestDirAmplab	
-DRILL	dfs.drillTestDirP1	
-DRILL	dfs.drillTestDirTpch	
-DRILL	dfs	
-DRILL	cp	
-DRILL	hbase	
-DRILL	sys	
-DRILL	INFORMATION_SCHEMA	
+DRILL	hive.marketing	owner	hive
+DRILL	hive	owner	hive
+DRILL	dfs.drillTestDirInformationSchema	owner	file
+DRILL	dfs.home	owner	file
+DRILL	dfs.drillTestDir	owner	file
+DRILL	dfs.drillTestDirAmplab	owner	file
+DRILL	dfs.drillTestDirP1	owner	file
+DRILL	dfs.drillTestDirTpch	owner	file
+DRILL	dfs	owner	file
+DRILL	cp	owner	file
+DRILL	hbase	owner	file
+DRILL	sys	owner	sys
+DRILL	INFORMATION_SCHEMA	owner file	
