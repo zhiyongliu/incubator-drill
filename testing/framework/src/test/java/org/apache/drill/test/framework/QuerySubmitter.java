@@ -26,7 +26,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -269,16 +271,13 @@ public class QuerySubmitter {
         return;
       }
       int columnCount = resultSet.getMetaData().getColumnCount();
-      Object[] types = new Object[columnCount];
-      Map<Integer, String> typesMap = Utils.getSqlTypesMap();
-      StringBuilder builder = new StringBuilder();
+      List<Object> types = new ArrayList<Object>();
       for (int i = 1; i <= columnCount; i++) {
-        types[i - 1] = resultSet.getMetaData().getColumnType(i);
-        builder.append(typesMap.get(types[i - 1]) + "\t");
+        types.add(resultSet.getMetaData().getColumnType(i));
       }
       ColumnList.setTypes(types);
       LOG.debug("Result set data types:");
-      LOG.debug("\t" + builder.toString().trim());
+      LOG.debug(Utils.getTypesInStrings(types));
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {

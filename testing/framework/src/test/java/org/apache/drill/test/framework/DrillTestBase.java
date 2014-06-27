@@ -306,7 +306,7 @@ public class DrillTestBase {
   }
 
   private void verifyAllOutputs(String[] expectedOutputs, String[] actualOutputs)
-      throws IOException, InterruptedException {
+      throws Exception {
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.PASS) {
       for (int i = 0; i < expectedOutputs.length; i++) {
         TestVerifier.TEST_STATUS status = TestVerifier.fileComparisonVerify(

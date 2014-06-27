@@ -19,7 +19,6 @@ package org.apache.drill.test.framework;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -56,17 +55,19 @@ public class TestVerifier {
    * @param actualOutput
    *          name of file containing actual output data
    * @return true if the outputs are identical
-   * @throws IOException
-   * @throws InterruptedException
+   * @throws Exception
    */
   public static TEST_STATUS fileComparisonVerify(String expectedOutput,
-      String actualOutput) throws IOException, InterruptedException {
+      String actualOutput) throws Exception {
     if (testStatus == TEST_STATUS.EXECUTION_FAILURE) {
       return testStatus;
     }
     Map<ColumnList, Integer> expectedMap = loadFromFileToMap(expectedOutput);
     if (expectedMap == null) {
       return TEST_STATUS.EXECUTION_FAILURE;
+    }
+    if (testStatus == TEST_STATUS.VERIFICATION_FAILURE) {
+      return testStatus;
     }
     int expectedCount = mapSize;
     Map<ColumnList, Integer> actualMap = loadFromFileToMap(actualOutput);
@@ -100,16 +101,17 @@ public class TestVerifier {
    * @param filename
    *          name of file containing result sets
    * @return RelaxedMap of result set
-   * @throws IOException
+   * @throws Exception
    */
   public static Map<ColumnList, Integer> loadFromFileToMap(String filename)
-      throws IOException {
+      throws Exception {
     List<Object> types = ColumnList.getTypes();
     if (types == null) {
       LOG.debug("Fatal: Types in the result set is null.  "
           + "This most likely resulted from failed execution.");
       return null;
     }
+    int size = types.size();
     Map<ColumnList, Integer> map = new HashMap<ColumnList, Integer>();
     BufferedReader reader = new BufferedReader(new FileReader(filename));
     String line = "";
@@ -117,6 +119,16 @@ public class TestVerifier {
     while ((line = reader.readLine()) != null) {
       line.trim();
       String[] fields = line.split("\t");
+      if (fields.length != size) {
+        LOG.fatal("Error: expected data and actual data have different number of columns.");
+        LOG.fatal("Number of columns in expected data: " + fields.length);
+        LOG.fatal("Number of columns in actual data: " + size);
+        LOG.fatal("First row of expected data:\n" + line);
+        LOG.fatal("Types in actual data: " + Utils.getTypesInStrings(types));
+        testStatus = TEST_STATUS.VERIFICATION_FAILURE;
+        reader.close();
+        return map;
+      }
       Object[] typedFields = new Object[fields.length];
       for (int i = 0; i < fields.length; i++) {
         if (types.size() == 0) {
