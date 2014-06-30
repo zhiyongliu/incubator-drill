@@ -26,9 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -47,7 +45,7 @@ public class QuerySubmitter {
   private String schema;
   private static Map<String, String> drillProperties = Utils
       .getDrillTestProperties();
-  private static int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
+  public static final long TIMEOUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
 
   /**
@@ -68,8 +66,8 @@ public class QuerySubmitter {
    * @throws IOException
    * @throws InterruptedException
    */
-  public void submitQueriesSqlline(String sqllineCommand, String queryFileName)
-      throws IOException, InterruptedException {
+  public void submitQueriesSqlline(String sqllineCommand, String queryFileName,
+      long timeout) throws IOException, InterruptedException {
     // TODO: need to parameterize the command line; need to finalize
     // treatment of schemas
     String command = sqllineCommand
@@ -77,22 +75,7 @@ public class QuerySubmitter {
         + queryFileName;
     LOG.debug("Executing " + command + ".");
     RunThread runThread = new RunThread(command);
-    processThread(runThread);
-  }
-
-  /**
-   * Submits query via JDBC
-   * 
-   * @param query
-   *          SQL query string
-   * @param statement
-   *          sql statement to execute the query with
-   * @return Map of query results and their occurrences
-   * @throws Exception
-   */
-  public void submitQueryJDBC(String query, Statement statement)
-      throws Exception {
-    submitQueryJDBC(query, statement, null);
+    processThread(runThread, timeout);
   }
 
   /**
@@ -185,14 +168,14 @@ public class QuerySubmitter {
    * @throws Exception
    */
   public void submitQueriesSubmitPlan(String submitPlanCommand,
-      String queryFileName, String outputFileName, String queryType)
-      throws Exception {
+      String queryFileName, String outputFileName, String queryType,
+      long timeout) throws Exception {
     String command = submitPlanCommand + " -f " + queryFileName
         + " --format tsv -t " + queryType + " -z "
         + Utils.getDrillTestProperties().get("ZOOKEEPERS");
     LOG.debug("Executing " + command + ".");
     RunThread runThread = new RunThread(command);
-    processThread(runThread);
+    processThread(runThread, timeout);
     Process process = runThread.getProcess();
     Scanner scanner = new Scanner(process.getInputStream()).useDelimiter("\\A");
     String output = scanner.hasNext() ? scanner.next() : "";
@@ -210,7 +193,7 @@ public class QuerySubmitter {
    * @throws Exception
    */
   public void generatePlan(Statement statement, String inputFileName,
-      String queryString, String type) throws Exception {
+      String queryString, String type, long timeout) throws Exception {
     String query = "explain plan ";
     String extension = ".p";
     if (type.equals("logical")) {
@@ -223,7 +206,7 @@ public class QuerySubmitter {
     try {
       LOG.debug("Submitting query:\n" + query.trim());
       RunThread runThread = new RunThread(statement, query);
-      processThread(runThread);
+      processThread(runThread, timeout);
       resultSet = runThread.getResultSet();
       resultSet.next();
       resultSet.next();
@@ -249,12 +232,30 @@ public class QuerySubmitter {
    *          SQL query string
    * @param statement
    *          sql statement to execute the query with
+   * @param timeout
+   *          time allowed for query execution
+   * @throws Exception
+   */
+  public void submitQueryJDBC(String query, Statement statement, long timeout)
+      throws Exception {
+    submitQueryJDBC(query, statement, null, timeout);
+  }
+
+  /**
+   * Submits query via JDBC
+   * 
+   * @param query
+   *          SQL query string
+   * @param statement
+   *          sql statement to execute the query with
    * @param outputFilename
    *          name of file result set is to be written to
+   * @param timeout
+   *          time allowed for query execution
    * @throws Exception
    */
   public void submitQueryJDBC(String query, Statement statement,
-      String outputFilename) throws Exception {
+      String outputFilename, long timeout) throws Exception {
     BufferedWriter writer = null;
     if (outputFilename != null) {
       writer = new BufferedWriter(new FileWriter(new File(outputFilename)));
@@ -262,7 +263,7 @@ public class QuerySubmitter {
     ResultSet resultSet = null;
     try {
       RunThread runThread = new RunThread(statement, query);
-      processThread(runThread);
+      processThread(runThread, timeout);
       resultSet = runThread.getResultSet();
       if (resultSet == null) {
         throw runThread.getException();
@@ -271,13 +272,13 @@ public class QuerySubmitter {
         return;
       }
       int columnCount = resultSet.getMetaData().getColumnCount();
-      List<Object> types = new ArrayList<Object>();
+      Object[] types = new Object[columnCount];
       for (int i = 1; i <= columnCount; i++) {
-        types.add(resultSet.getMetaData().getColumnType(i));
+        types[i - 1] = resultSet.getMetaData().getColumnType(i);
       }
       ColumnList.setTypes(types);
       LOG.debug("Result set data types:");
-      LOG.debug(Utils.getTypesInStrings(types));
+      LOG.debug(Utils.getTypesInStrings(ColumnList.getTypes()));
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {
@@ -310,9 +311,15 @@ public class QuerySubmitter {
     }
   }
 
-  private boolean processThread(RunThread runThread) throws InterruptedException {
+  private boolean processThread(RunThread runThread)
+      throws InterruptedException {
+    return processThread(runThread, TIMEOUT_SECONDS);
+  }
+
+  private boolean processThread(RunThread runThread, long timeout)
+      throws InterruptedException {
     runThread.start();
-    runThread.join(TIME_OUT_SECONDS * 1000);
+    runThread.join(timeout * 1000);
     if (runThread.isAlive()) {
       TestVerifier.testStatus = TestVerifier.TEST_STATUS.TIMEOUT;
       runThread.interrupt();
@@ -320,7 +327,7 @@ public class QuerySubmitter {
     }
     return true;
   }
-  
+
   private class RunThread extends Thread {
     private Statement statement;
     private String query;
@@ -361,7 +368,7 @@ public class QuerySubmitter {
     public Process getProcess() {
       return process;
     }
-    
+
     public Exception getException() {
       return exception;
     }

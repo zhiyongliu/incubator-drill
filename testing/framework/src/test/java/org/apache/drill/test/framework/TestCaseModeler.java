@@ -30,6 +30,7 @@ public class TestCaseModeler {
   private String description;
   private String submitType = "jdbc";
   private String queryType = "sql";
+  private String timeout = null;
   private List<String> categories;
   private List<TestMatrix> matrices;
   private List<DataSource> datasources;
@@ -66,12 +67,13 @@ public class TestCaseModeler {
    * @param description
    * @param submitType
    * @param queryType
+   * @param timeout
    * @param categories
    * @param matrices
    * @param datasources
    */
-  public TestCaseModeler(String testId, String description,
-      String submitType, String queryType, List<String> categories,
+  public TestCaseModeler(String testId, String description, String submitType,
+      String queryType, String timeout, List<String> categories,
       List<TestMatrix> matrices, List<DataSource> datasources) {
     this(testId, description, categories, matrices, datasources);
     if (submitType != null) {
@@ -79,6 +81,9 @@ public class TestCaseModeler {
     }
     if (queryType != null) {
       this.queryType = queryType;
+    }
+    if (timeout != null) {
+      this.timeout = timeout;
     }
   }
 
@@ -96,6 +101,10 @@ public class TestCaseModeler {
 
   public String getQueryType() {
     return queryType;
+  }
+
+  public String getTimeout() {
+    return timeout;
   }
 
   public List<String> getCategories() {
@@ -117,6 +126,9 @@ public class TestCaseModeler {
     }
     if (queryType != null) {
       result += "\nQuery Type: " + queryType;
+    }
+    if (timeout != null) {
+      result += "\nTimeout: " + timeout;
     }
     result += "\nTest Categories: " + categories;
     for (TestMatrix matrix : matrices) {

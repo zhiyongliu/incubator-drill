@@ -59,8 +59,6 @@ public class DrillTestBase {
       .get("DRILL_HOME") + "/bin/sqlline";
   private static final String SUBMIT_PLAN_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/submit_plan";
-  private static int TIME_OUT_SECONDS = Integer.parseInt(drillProperties
-      .get("TIME_OUT_SECONDS"));
   private Connection connection = null;
   private Statement statement = null;
   private ResultSet resultSet = null;
@@ -70,6 +68,7 @@ public class DrillTestBase {
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
   private String optionFile = null;
   private boolean restartDrillBit = false;
+  private static long executionTime = QuerySubmitter.TIMEOUT_SECONDS;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
@@ -87,7 +86,7 @@ public class DrillTestBase {
       LOG.debug("No option file provided.");
     }
     try {
-      TIME_OUT_SECONDS = Integer.parseInt(System.getProperty("timeout"));
+      executionTime = Integer.parseInt(System.getProperty("timeout"));
     } catch (Exception e) {
       LOG.debug("No timeout specified");
     }
@@ -170,14 +169,16 @@ public class DrillTestBase {
           String[] optionQueries = Utils.getSqlStatements(optionFile);
           for (String optionQuery : optionQueries) {
             submitter = new QuerySubmitter(schemas[0]);
-            submitter.submitQueryJDBC(optionQuery, statement);
+            submitter.submitQueryJDBC(optionQuery, statement,
+                QuerySubmitter.TIMEOUT_SECONDS);
           }
         }
       }
     }
     testProcess(modeler.getTestId(), modeler.getDescription(),
-        modeler.getSubmitType(), modeler.getQueryType(), inputFileNames,
-        outputFormats, expectedFiles, schemas, verificationTypes);
+        modeler.getSubmitType(), modeler.getQueryType(), modeler.getTimeout(),
+        inputFileNames, outputFormats, expectedFiles, schemas,
+        verificationTypes);
     if (resultSet != null) {
       resultSet.close();
     }
@@ -210,23 +211,32 @@ public class DrillTestBase {
   }
 
   private void testProcess(String testId, String testDesc, String submitType,
-      String queryType, String[] inputFileNames, String[] outputFormats,
-      String[] expectedFiles, String[] schemas, String[] verificationTypes)
-      throws Exception {
+      String queryType, String timeout, String[] inputFileNames,
+      String[] outputFormats, String[] expectedFiles, String[] schemas,
+      String[] verificationTypes) throws Exception {
     logTestStart(testId, testDesc);
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
         outputFormats);
+    try {
+      executionTime = Integer.parseInt(System.getProperty("timeout"));
+    } catch (Exception e) {
+      executionTime = QuerySubmitter.TIMEOUT_SECONDS;
+    }
+    if (timeout != null) {
+      executionTime = Long.parseLong(timeout);
+    }
     submitter = new QuerySubmitter(schemas[0]);
     if (submitType.equals("sqlline")) {
       String queries = handler.congregateFiles(CONGREGATED_FILENAME);
       LOG.info("Submitting queries:\n" + queries);
-      submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME);
+      submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME,
+          executionTime);
     } else {
       for (int i = 0; i < inputFileNames.length; i++) {
         if (submitType.equals("submit_plan")) {
           submitter.submitQueriesSubmitPlan(SUBMIT_PLAN_COMMAND,
-              inputFileNames[i], outputFileNames[i], queryType);
+              inputFileNames[i], outputFileNames[i], queryType, executionTime);
         } else {
           String[] queryStrings = Utils.getSqlStatements(inputFileNames[i]);
           int mid = queryStrings.length / 2;
@@ -239,20 +249,21 @@ public class DrillTestBase {
             } else {
               LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
               if (j != mid) {
-                submitter.submitQueryJDBC(queryString, statement);
+                submitter
+                    .submitQueryJDBC(queryString, statement, executionTime);
                 continue;
               }
               if (submitType.equals("jdbc")) {
                 query = inputFileNames[i];
                 try {
                   submitter.submitQueryJDBC(queryString, statement,
-                      outputFileNames[i]);
+                      outputFileNames[i], executionTime);
                 } catch (Exception e) {
                   continue;
                 }
               } else {
                 submitter.generatePlan(statement, inputFileNames[i],
-                    queryString, submitType);
+                    queryString, submitType, executionTime);
               }
             }
           }
@@ -334,7 +345,7 @@ public class DrillTestBase {
       message = "Verification failed.";
       break;
     case TIMEOUT:
-      message = "Timeout of " + TIME_OUT_SECONDS + " seconds exceeded.";
+      message = "Timeout of " + executionTime + " seconds exceeded.";
       break;
     default:
       break;

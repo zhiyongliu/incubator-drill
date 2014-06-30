@@ -203,6 +203,7 @@ public class JsonTestDataProcessor {
     List<String> categories = getListTestParameter("categories");
     String submitType = null;
     String queryType = null;
+    String timeout = null;
     try {
       submitType = getSimpleTestParameter("submit-type");
     } catch (JSONException e) {
@@ -211,7 +212,11 @@ public class JsonTestDataProcessor {
       queryType = getSimpleTestParameter("query-type");
     } catch (JSONException e) {
     }
+    try {
+      timeout = getSimpleTestParameter("timeout");
+    } catch (JSONException e) {
+    }
     return new TestCaseModeler(testId, description, submitType, queryType,
-        categories, matrices, datasources);
+        timeout, categories, matrices, datasources);
   }
 }
