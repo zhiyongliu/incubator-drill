@@ -258,6 +258,8 @@ public class DrillTestBase {
                 try {
                   submitter.submitQueryJDBC(queryString, statement,
                       outputFileNames[i], executionTime);
+                  submitter.generatePlan(statement, query, queryString,
+                      "physical", executionTime);
                 } catch (Exception e) {
                   continue;
                 }
