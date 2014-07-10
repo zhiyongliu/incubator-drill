@@ -353,7 +353,7 @@ public class DrillTestBase {
         if (areOrderByQueries != null) {
           isOrderByQuery = areOrderByQueries[i];
         }
-        TestVerifier.TEST_STATUS status = TestVerifier.fileComparisonVerify(
+        TestVerifier.TEST_STATUS status = TestVerifier.verifyExpectedActualFiles(
             expectedOutputs[i], actualOutputs[i], isOrderByQuery);
         if (status != TestVerifier.TEST_STATUS.PASS) {
           TestVerifier.testStatus = status;

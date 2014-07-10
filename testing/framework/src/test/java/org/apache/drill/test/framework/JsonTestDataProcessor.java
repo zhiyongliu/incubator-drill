@@ -113,7 +113,7 @@ public class JsonTestDataProcessor {
    *          collected for the data-driven engine.
    * @param expectedFile
    *          similar to queryFile.
-   * @return list of TestCaseModeler.TestMatrix objects.
+   * @return list of {@link TestCaseModeler.TestMatrix} objects.
    * @throws JSONException
    */
   public List<TestCaseModeler.TestMatrix> constructTestMatrices(
@@ -163,7 +163,7 @@ public class JsonTestDataProcessor {
   /**
    * Constructs a TestCaseModeler object with undefined query file.
    * 
-   * @return the TestCaseModeler object constructed.
+   * @return the {@link TestCaseModeler} object constructed.
    * @throws JSONException
    */
   public TestCaseModeler constructTestCaseModeler() throws JSONException {
@@ -174,8 +174,8 @@ public class JsonTestDataProcessor {
    * Constructs a TestCaseModeler object.
    * 
    * @param matrices
-   *          list of TestCaseModeler.TestMatrix used in the construction.
-   * @return a TestCaseModeler object.
+   *          list of {@link TestCaseModeler.TestMatrix} used in the construction.
+   * @return a {@link TestCaseModeler} object.
    * @throws JSONException
    */
   public TestCaseModeler constructTestCaseModeler(
@@ -187,12 +187,12 @@ public class JsonTestDataProcessor {
    * Constructs a TestCaseModeler object.
    * 
    * @param matrices
-   *          list of TestCaseModeler.TestMatrix objects used in the
+   *          list of {@link TestCaseModeler.TestMatrix} objects used in the
    *          construction.
    * @param datasources
-   *          list of TestCaseModeler.DataSource objects used in the
+   *          list of {@link TestCaseModeler.DataSource} objects used in the
    *          construction.
-   * @return a TestCaseModeler object.
+   * @return a {@link TestCaseModeler} object.
    * @throws JSONException
    */
   public TestCaseModeler constructTestCaseModeler(

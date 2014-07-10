@@ -50,7 +50,7 @@ public class JsonTestDataProvider {
    *          so they can query information about their environment.
    * @param method
    *          method that makes a call to this data provider.
-   * @return an iteration of object arrays that defines set of tests to be
+   * @return an iteration of object arrays that defines the set of tests to be
    *         executed.
    * @throws Exception
    */

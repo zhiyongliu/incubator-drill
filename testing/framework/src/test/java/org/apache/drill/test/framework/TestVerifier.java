@@ -60,9 +60,9 @@ public class TestVerifier {
    * @return {@link TEST_STATUS}
    * @throws Exception
    */
-  public static TEST_STATUS fileComparisonVerify(String expectedOutput,
+  public static TEST_STATUS verifyExpectedActualFiles(String expectedOutput,
       String actualOutput) throws Exception {
-    return fileComparisonVerify(expectedOutput, actualOutput, false);
+    return verifyExpectedActualFiles(expectedOutput, actualOutput, false);
   }
 
   /**
@@ -78,7 +78,7 @@ public class TestVerifier {
    * @return {@link TEST_STATUS}
    * @throws Exception
    */
-  public static TEST_STATUS fileComparisonVerify(String expectedOutput,
+  public static TEST_STATUS verifyExpectedActualFiles(String expectedOutput,
       String actualOutput, boolean verifyOrderBy) throws Exception {
     if (testStatus == TEST_STATUS.EXECUTION_FAILURE) {
       return testStatus;
@@ -149,7 +149,7 @@ public class TestVerifier {
     String line = "";
     mapSize = 0;
     while ((line = reader.readLine()) != null) {
-      line.trim();
+      line = line.trim();
       String[] fields = line.split("\t");
       if (fields.length != size) {
         LOG.fatal("Error: expected data and actual data have different number of columns.");
