@@ -48,6 +48,7 @@ The .json test definition file looks like the following:
     "description": "Test join queries via jdbc",
     "submit-type": "jdbc",
     "query-type": "sql",
+    "timeout": "20",
     "categories": [
         "smoke"
     ],
@@ -70,6 +71,8 @@ The .json test definition file looks like the following:
 "submit-type" specifies the submit type.  Valid values are: jdbc, submit_plan, sqlline.  Optional; if not present, jdbc is used.
 
 "query-type" specifies the query type.  Valid values are: sql, physical, logical.  Optional; if not present, sql is used.
+
+"timeout" specifies the amount of time each query in this test suite is allocated.  If a query takes longer to finish, the framework stops the test and sets the test status to timeout.
 
 "categories" is a list of tags that a test may belong to.
 

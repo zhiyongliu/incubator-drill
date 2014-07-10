@@ -20,10 +20,12 @@ package org.apache.drill.test.framework;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,9 +43,10 @@ public class TestVerifier {
       .getInvokingClassName());
   public static TEST_STATUS testStatus = TEST_STATUS.UNASSIGNED;
   private transient static int mapSize = 0;
+  private static List<ColumnList> resultSet = null;
 
   public enum TEST_STATUS {
-    PASS, EXECUTION_FAILURE, VERIFICATION_FAILURE, TIMEOUT, UNASSIGNED
+    PASS, EXECUTION_FAILURE, VERIFICATION_FAILURE, ORDER_MISMATCH, TIMEOUT, UNASSIGNED
   };
 
   /**
@@ -54,11 +57,29 @@ public class TestVerifier {
    *          name of file containing expected output data
    * @param actualOutput
    *          name of file containing actual output data
-   * @return true if the outputs are identical
+   * @return {@link TEST_STATUS}
    * @throws Exception
    */
   public static TEST_STATUS fileComparisonVerify(String expectedOutput,
       String actualOutput) throws Exception {
+    return fileComparisonVerify(expectedOutput, actualOutput, false);
+  }
+
+  /**
+   * Verifies output of a query. The verification is performed by comparing the
+   * contents of the expected and actual query result files.
+   * 
+   * @param expectedOutput
+   *          name of file containing expected output data
+   * @param actualOutput
+   *          name of file containing actual output data
+   * @param verifyOrderBy
+   *          whether the query involves order by
+   * @return {@link TEST_STATUS}
+   * @throws Exception
+   */
+  public static TEST_STATUS fileComparisonVerify(String expectedOutput,
+      String actualOutput, boolean verifyOrderBy) throws Exception {
     if (testStatus == TEST_STATUS.EXECUTION_FAILURE) {
       return testStatus;
     }
@@ -88,11 +109,17 @@ public class TestVerifier {
         unexpectedCount += count;
       }
     }
-    printSummary(unexpectedList, unexpectedCount, expectedMap, expectedCount,
-        actualCount);
-    return expectedMap.isEmpty() && unexpectedList.isEmpty() ? TEST_STATUS.PASS
+    testStatus = expectedMap.isEmpty() && unexpectedList.isEmpty() ? TEST_STATUS.PASS
         : TEST_STATUS.VERIFICATION_FAILURE;
+    printSummary(unexpectedList, unexpectedCount, expectedMap, expectedCount,
+        actualCount, verifyOrderBy);
+    return testStatus;
 
+  }
+
+  private static Map<ColumnList, Integer> loadFromFileToMap(String filename)
+      throws Exception {
+    return loadFromFileToMap(filename, false);
   }
 
   /**
@@ -103,8 +130,8 @@ public class TestVerifier {
    * @return RelaxedMap of result set
    * @throws Exception
    */
-  public static Map<ColumnList, Integer> loadFromFileToMap(String filename)
-      throws Exception {
+  private static Map<ColumnList, Integer> loadFromFileToMap(String filename,
+      boolean ordered) throws Exception {
     List<Object> types = ColumnList.getTypes();
     if (types == null) {
       LOG.debug("Fatal: Types in the result set is null.  "
@@ -112,7 +139,12 @@ public class TestVerifier {
       return null;
     }
     int size = types.size();
-    Map<ColumnList, Integer> map = new HashMap<ColumnList, Integer>();
+    Map<ColumnList, Integer> map = null;
+    if (ordered) {
+      resultSet = new ArrayList<ColumnList>();
+    } else {
+      map = new HashMap<ColumnList, Integer>();
+    }
     BufferedReader reader = new BufferedReader(new FileReader(filename));
     String line = "";
     mapSize = 0;
@@ -138,11 +170,17 @@ public class TestVerifier {
         int type = (Integer) (types.get(i));
         try {
           switch (type) {
+          case Types.INTEGER:
+          case Types.BIGINT:
+          case Types.SMALLINT:
+          case Types.TINYINT:
+            typedFields[i] = new BigInteger(fields[i]);
+            break;
           case Types.FLOAT:
-            typedFields[i] = Float.parseFloat(fields[i]);
+            typedFields[i] = new Float(fields[i]);
             break;
           case Types.DOUBLE:
-            typedFields[i] = Double.parseDouble(fields[i]);
+            typedFields[i] = new Double(fields[i]);
             break;
           case Types.DECIMAL:
             typedFields[i] = new BigDecimal(fields[i]);
@@ -156,12 +194,16 @@ public class TestVerifier {
         }
       }
       ColumnList cl = new ColumnList(typedFields);
-      if (map.containsKey(cl)) {
-        map.put(cl, map.get(cl) + 1);
+      if (ordered) {
+        resultSet.add(cl);
       } else {
-        map.put(cl, 1);
+        if (map.containsKey(cl)) {
+          map.put(cl, map.get(cl) + 1);
+        } else {
+          map.put(cl, 1);
+        }
+        mapSize++;
       }
-      mapSize++;
     }
     reader.close();
     return map;
@@ -180,14 +222,16 @@ public class TestVerifier {
 
   private static void printSummary(List<ColumnList> unexpectedList,
       int unexpectedCount, Map<ColumnList, Integer> expectedMap,
-      int expectedCount, int actualCount) {
+      int expectedCount, int actualCount, boolean verifyOrderBy) {
     if (testStatus == TEST_STATUS.EXECUTION_FAILURE
         || testStatus == TEST_STATUS.TIMEOUT) {
       return;
     }
     int missingCount = getMissingCount(expectedMap);
-    if (missingCount == 0 && unexpectedList.size() == 0) {
-      LOG.info("\nTest passed.");
+    if (testStatus == TEST_STATUS.PASS) {
+      if (!verifyOrderBy) {
+        LOG.info("\nTest passed.");
+      }
       return;
     }
     LOG.info("         Expected number of rows: " + expectedCount);
@@ -228,5 +272,117 @@ public class TestVerifier {
       missingCount += iterator.next();
     }
     return missingCount;
+  }
+
+  private static int compareTo(ColumnList list1, ColumnList list2,
+      Map<Integer, String> columnIndexAndOrder, int start) {
+    if (start == columnIndexAndOrder.size()) {
+      return 0;
+    }
+    int idx = (Integer) columnIndexAndOrder.keySet().toArray()[start];
+    int result = -1;
+    Object o1 = list1.getList().get(idx);
+    Object o2 = list2.getList().get(idx);
+    if (o1 instanceof Number) {
+      Number number1 = (Number) o1;
+      Number number2 = (Number) o2;
+      double diff = number1.doubleValue() - number2.doubleValue();
+      if (diff == 0) {
+        return compareTo(list1, list2, columnIndexAndOrder, start + 1);
+      } else {
+        if (diff < 0) {
+          result = -1;
+        } else {
+          result = 1;
+        }
+        if (columnIndexAndOrder.get(idx).equalsIgnoreCase("desc")) {
+          result *= -1;
+        }
+        return result;
+      }
+    }
+    @SuppressWarnings("unchecked")
+    Comparable<Object> comparable1 = (Comparable<Object>) list1.getList().get(
+        idx);
+    @SuppressWarnings("unchecked")
+    Comparable<Object> comparable2 = (Comparable<Object>) list2.getList().get(
+        idx);
+    result = comparable1.compareTo(comparable2);
+    if (columnIndexAndOrder.get(idx).equalsIgnoreCase("desc")) {
+      result *= -1;
+    }
+    if (result == 0) {
+      return compareTo(list1, list2, columnIndexAndOrder, start + 1);
+    } else {
+      return result;
+    }
+  }
+
+  /**
+   * Verifies orders in the result set if a query involves order by in the final
+   * output.
+   * 
+   * @param filename
+   *          name of file of actual output
+   * @param columnLabels
+   *          list of labels of all returned columns
+   * @param orderByColumns
+   *          map of all order-by columns and their orders (ascending or
+   *          descending)
+   * @return {@link TEST_STATUS}
+   * @throws Exception
+   */
+  public static TEST_STATUS verifyResultSetOrders(String filename,
+      List<String> columnLabels, Map<String, String> orderByColumns)
+      throws Exception {
+    loadFromFileToMap(filename, true);
+    Map<Integer, String> columnIndexAndOrder = getColumnIndexAndOrder(
+        columnLabels, orderByColumns);
+    if (!isOrdered(columnIndexAndOrder)) {
+      LOG.info("\nOrder mismatch in actual result set.");
+      return TEST_STATUS.ORDER_MISMATCH;
+    }
+    LOG.info("\nTest passed.");
+    return TEST_STATUS.PASS;
+  }
+
+  private static Map<Integer, String> getColumnIndexAndOrder(
+      List<String> columnLabels, Map<String, String> orderByColumns) {
+    Map<Integer, String> columnIndexAndOrder = new LinkedHashMap<Integer, String>();
+    List<Integer> indicesOfOrderByColumns = getIndicesOfOrderByColumns(
+        columnLabels, orderByColumns);
+    for (int i = 0; i < indicesOfOrderByColumns.size(); i++) {
+      columnIndexAndOrder.put(indicesOfOrderByColumns.get(i),
+          orderByColumns.get(orderByColumns.keySet().toArray()[i]));
+    }
+    return columnIndexAndOrder;
+  }
+
+  private static List<Integer> getIndicesOfOrderByColumns(
+      List<String> columnLabels, Map<String, String> orderByColumns) {
+    List<Integer> indices = new ArrayList<Integer>();
+    for (Map.Entry<String, String> entry : orderByColumns.entrySet()) {
+      indices.add(columnLabels.indexOf(entry.getKey()));
+    }
+    return indices;
+  }
+
+  private static boolean isOrdered(Map<Integer, String> columnIndexAndOrder) {
+    if (resultSet.size() <= 1) {
+      return true;
+    }
+    ColumnList first = resultSet.get(0);
+    for (int i = 1; i < resultSet.size(); i++) {
+      ColumnList next = resultSet.get(i);
+      int compared = compareTo(first, next, columnIndexAndOrder, 0);
+      if (compared <= 0) {
+        first = next;
+        continue;
+      } else {
+        LOG.info(first + " : " + next);
+        return false;
+      }
+    }
+    return true;
   }
 }

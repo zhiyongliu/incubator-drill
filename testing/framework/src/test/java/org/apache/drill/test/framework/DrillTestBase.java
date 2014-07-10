@@ -26,10 +26,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -214,8 +218,11 @@ public class DrillTestBase {
       String queryType, String timeout, String[] inputFileNames,
       String[] outputFormats, String[] expectedFiles, String[] schemas,
       String[] verificationTypes) throws Exception {
-    logTestStart(testId, testDesc);
+    logTestStart();
     String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
+    List<List<String>> allColumnLabels = new ArrayList<List<String>>();
+    List<Map<String, String>> allOrderByColumns = new ArrayList<Map<String, String>>();
+    boolean[] areOrderByQueries = new boolean[inputFileNames.length];
     handler = new InputQueryFileHandler(inputFileNames, outputFileNames,
         outputFormats);
     try {
@@ -258,6 +265,14 @@ public class DrillTestBase {
                 try {
                   submitter.submitQueryJDBC(queryString, statement,
                       outputFileNames[i], executionTime);
+                  areOrderByQueries[i] = isOrderByQuery(queryString);
+                  if (areOrderByQueries[i]) {
+                    allOrderByColumns.add(getOrderByColumns(queryString,
+                        submitter.getColumnLabels()));
+                  } else {
+                    allOrderByColumns.add(null);
+                  }
+                  allColumnLabels.add(submitter.getColumnLabels());
                   submitter.generatePlan(statement, query, queryString,
                       "physical", executionTime);
                 } catch (Exception e) {
@@ -289,7 +304,11 @@ public class DrillTestBase {
     } else if (submitType.equals("jdbc")) {
       if (verificationTypes != null && verificationTypes.length != 0
           && !verificationTypes[0].equalsIgnoreCase("none")) {
-        verifyAllOutputs(expectedFiles, outputFileNames);
+        verifyAllOutputs(expectedFiles, outputFileNames, areOrderByQueries);
+        if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.PASS) {
+          verifyAllOutputsOrders(outputFileNames, allColumnLabels,
+              allOrderByColumns);
+        }
       }
     }
     switch (TestVerifier.testStatus) {
@@ -298,6 +317,9 @@ public class DrillTestBase {
       break;
     case VERIFICATION_FAILURE:
       summaryFailed += "***[verification failure] " + query + "\n";
+      break;
+    case ORDER_MISMATCH:
+      summaryFailed += "***[order mismatch] " + query + "\n";
       break;
     default:
       break;
@@ -320,10 +342,19 @@ public class DrillTestBase {
 
   private void verifyAllOutputs(String[] expectedOutputs, String[] actualOutputs)
       throws Exception {
+    verifyAllOutputs(expectedOutputs, actualOutputs, null);
+  }
+
+  private void verifyAllOutputs(String[] expectedOutputs,
+      String[] actualOutputs, boolean[] areOrderByQueries) throws Exception {
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.PASS) {
       for (int i = 0; i < expectedOutputs.length; i++) {
+        boolean isOrderByQuery = false;
+        if (areOrderByQueries != null) {
+          isOrderByQuery = areOrderByQueries[i];
+        }
         TestVerifier.TEST_STATUS status = TestVerifier.fileComparisonVerify(
-            expectedOutputs[i], actualOutputs[i]);
+            expectedOutputs[i], actualOutputs[i], isOrderByQuery);
         if (status != TestVerifier.TEST_STATUS.PASS) {
           TestVerifier.testStatus = status;
           break;
@@ -332,7 +363,22 @@ public class DrillTestBase {
     }
   }
 
-  private void logTestStart(String testId, String testDesc) throws IOException {
+  private void verifyAllOutputsOrders(String[] actualOutputs,
+      List<List<String>> allColumnLabels,
+      List<Map<String, String>> allOrderByColumns) throws Exception {
+    for (int i = 0; i < actualOutputs.length; i++) {
+      if (allOrderByColumns.get(i) != null) {
+        TestVerifier.TEST_STATUS status = TestVerifier.verifyResultSetOrders(
+            actualOutputs[i], allColumnLabels.get(i), allOrderByColumns.get(i));
+        if (status != TestVerifier.TEST_STATUS.PASS) {
+          TestVerifier.testStatus = status;
+          break;
+        }
+      }
+    }
+  }
+
+  private void logTestStart() throws IOException {
     LOG.info("\n\n+===========================================+");
     LOG.info("Test_Started: " + dateFormat.format(new Date()));
   }
@@ -345,6 +391,9 @@ public class DrillTestBase {
       break;
     case VERIFICATION_FAILURE:
       message = "Verification failed.";
+      break;
+    case ORDER_MISMATCH:
+      message = "Order mismatch.";
       break;
     case TIMEOUT:
       message = "Timeout of " + executionTime + " seconds exceeded.";
@@ -374,6 +423,69 @@ public class DrillTestBase {
       LOG.debug("The source file " + src
           + " already exists in destination.  Skipping the copy.");
     }
+  }
+
+  private String getOrderByBlock(String statement) {
+    String block = statement;
+    int idx = statement.lastIndexOf(')');
+    if (idx >= 0) {
+      block = block.substring(idx + 1);
+    }
+    Pattern pattern = Pattern.compile("order\\s+?by");
+    Matcher matcher = pattern.matcher(block.toLowerCase());
+    if (matcher.find()) {
+      block = block.substring(matcher.start());
+    } else {
+      block = "";
+    }
+    idx = block.toLowerCase().indexOf("limit");
+    if (idx >= 0) {
+      block = block.substring(0, idx);
+    }
+    return block.trim();
+  }
+
+  private boolean isOrderByQuery(String statement) {
+    return !getOrderByBlock(statement).isEmpty();
+  }
+
+  private Map<String, String> getOrderByColumns(String statement,
+      List<String> columnLabels) {
+    if (!isOrderByQuery(statement)) {
+      return null;
+    }
+    Map<String, String> orderByColumns = new LinkedHashMap<String, String>();
+    String string = getOrderByBlock(statement);
+    Pattern pattern = Pattern.compile("order\\s+?by");
+    Matcher matcher = pattern.matcher(string.toLowerCase());
+    if (matcher.find()) {
+      string = string.substring(matcher.end()).trim();
+    } else {
+      return null;
+    }
+    String[] columns = string.split(",");
+    for (String column : columns) {
+      column = column.trim();
+      String[] columnOrder = column.split("\\s+");
+      String columnName = columnOrder[0].trim();
+      if (columnName.indexOf('.') >= 0) {
+        columnName = columnName.substring(columnName.indexOf('.') + 1);
+      }
+      int ordinal = -1;
+      try {
+        ordinal = Integer.parseInt(columnName);
+      } catch (Exception e) {
+      }
+      if (ordinal > 0) {
+        columnName = columnLabels.get(ordinal - 1);
+      }
+      if (columnOrder.length == 2) {
+        orderByColumns.put(columnName, columnOrder[1].trim());
+      } else {
+        orderByColumns.put(columnName, "asc");
+      }
+    }
+    return orderByColumns;
   }
 
   private class Pair {

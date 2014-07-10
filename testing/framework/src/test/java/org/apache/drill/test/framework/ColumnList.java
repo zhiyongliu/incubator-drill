@@ -67,6 +67,10 @@ public class ColumnList {
   public static List<Object> getTypes() {
     return types;
   }
+  
+  public List<Object> getList() {
+    return list;
+  }
 
   /**
    * Overrides the equals() method in Object that compares two objects using the

@@ -26,7 +26,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -47,6 +49,7 @@ public class QuerySubmitter {
       .getDrillTestProperties();
   public static final long TIMEOUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
+  private List<String> columnLabels = null;
 
   /**
    * Constructor with the schema name
@@ -272,6 +275,10 @@ public class QuerySubmitter {
         return;
       }
       int columnCount = resultSet.getMetaData().getColumnCount();
+      columnLabels = new ArrayList<String>();
+      for (int i = 1; i <= columnCount; i++) {
+        columnLabels.add(resultSet.getMetaData().getColumnLabel(i));
+      }
       Object[] types = new Object[columnCount];
       for (int i = 1; i <= columnCount; i++) {
         types[i - 1] = resultSet.getMetaData().getColumnType(i);
@@ -372,5 +379,9 @@ public class QuerySubmitter {
     public Exception getException() {
       return exception;
     }
+  }
+  
+  public List<String> getColumnLabels() {
+    return columnLabels;
   }
 }
