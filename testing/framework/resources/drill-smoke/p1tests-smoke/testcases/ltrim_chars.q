@@ -1,1 +1,1 @@
-select ltrim(name, 'jes') from voter where rownum=13;
+select ltrim(name, 'jes') from voter where voter_id=13;

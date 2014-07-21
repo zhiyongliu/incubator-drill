@@ -1,1 +1,1 @@
-select (age * rownum) from voter where rownum=10;
+select (age * voter_id) from voter where voter_id=10;

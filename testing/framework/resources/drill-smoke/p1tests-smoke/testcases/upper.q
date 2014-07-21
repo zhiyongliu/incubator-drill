@@ -1,1 +1,1 @@
-select upper(name) from voter where rownum=10;
+select upper(name) from voter where voter_id=10;

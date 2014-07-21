@@ -1,1 +1,1 @@
-select lower(name) from voter where rownum=15;
+select lower(name) from voter where voter_id=15;
