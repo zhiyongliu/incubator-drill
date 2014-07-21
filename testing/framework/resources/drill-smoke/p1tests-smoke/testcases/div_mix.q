@@ -1,1 +1,1 @@
-select div(age,rownum) div from voter where rownum < 50;
+select div(age,voter_id) div from voter where voter_id < 50;

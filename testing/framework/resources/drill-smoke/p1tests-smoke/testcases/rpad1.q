@@ -1,1 +1,1 @@
-select rpad(name, 20, 'A') from voter where rownum=10;
+select rpad(name, 20, 'A') from voter where voter_id=10;

@@ -1,1 +1,1 @@
-select abs(-13.55) from student where rownum=10;
+select abs(-13.55) from student where student_id=10;

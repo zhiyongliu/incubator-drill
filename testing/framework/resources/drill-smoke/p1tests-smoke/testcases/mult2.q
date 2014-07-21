@@ -1,1 +1,1 @@
-select (age * gpa) from student where rownum=10;
+select (age * gpa) from student where student_id=10;

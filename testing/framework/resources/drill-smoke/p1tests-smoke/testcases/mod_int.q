@@ -1,1 +1,1 @@
-select mod(age,rownum) from voter where rownum=10;
+select mod(age,voter_id) from voter where voter_id=10;

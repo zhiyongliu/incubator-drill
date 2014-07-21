@@ -1,1 +1,1 @@
-select sign(0) from voter where rownum=11;
+select sign(0) from voter where voter_id=11;
