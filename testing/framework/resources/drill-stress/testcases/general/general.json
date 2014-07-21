@@ -1,0 +1,76 @@
+{
+    "testId": "stress-general",
+    "type": "group",
+    "description": "Drill Stress Testing",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirStress",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+      {
+        "mode": "cp",
+        "src": "drill-stress/datasources/200columns.parquet",
+        "dest": "stress/200columns/200columns.parquet"
+      },
+      { 
+        "mode": "cp", 
+        "src": "drill-stress/datasources/wide-columns-10000.tbl", 
+        "dest": "stress/wide-columns-10000.tbl" 
+      },
+      { 
+        "mode": "cp", 
+        "src": "drill-stress/datasources/wide-columns-100000.tbl", 
+        "dest": "stress/wide-columns-100000.tbl" 
+      },
+      {  
+        "mode": "cp",  
+        "src": "drill-stress/datasources/lineitem_small.parquet",  
+        "dest": "stress/lineitem1.parquet"  
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/lineitem_small.parquet",   
+        "dest": "stress/lineitem2.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/orders.parquet",   
+        "dest": "stress/orders.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/part.parquet",   
+        "dest": "stress/part.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/partsupp.parquet",   
+        "dest": "stress/partsupp.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/supplier.parquet",   
+        "dest": "stress/supplier.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/51columns.parquet",   
+        "dest": "stress/51columns.parquet"   
+      },
+      {   
+        "mode": "cp",   
+        "src": "drill-stress/datasources/201columns.parquet",   
+        "dest": "stress/201columns.parquet"   
+      }
+    ]
+}

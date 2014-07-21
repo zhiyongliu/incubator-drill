@@ -1,0 +1,1 @@
+wide-columns-text-sum.q : Though we are not doing any test on the really wide column, the text reader has to still read all the columns since it reads row-by-row. So this test makes sure that we are not having any problems atleast with queries that do not use the widest column present in the file.
