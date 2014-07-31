@@ -325,14 +325,28 @@ public class DrillTestBase {
   }
 
   private String[] generateOutputFileNames(String[] inputFileNames,
-      String testId) {
+      String testId) throws IOException {
+    String drillOutputDirName = "";
+    drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
+    if (drillOutputDirName == null) {
+      drillOutputDirName = "/tmp";
+    }
+    File drillOutputDirDir = new File(drillOutputDirName);
+    if (!drillOutputDirDir.exists()) {
+      if (!drillOutputDirDir.mkdir()) {
+        LOG.debug("Cannot create directory " + drillOutputDirName
+            + ".  Using /tmp for drill output");
+        drillOutputDirName = "/tmp";
+      }
+    }
     String[] outputFileNames = new String[inputFileNames.length];
     for (int i = 0; i < outputFileNames.length; i++) {
       String inputFileName = inputFileNames[i];
       int index = inputFileName.lastIndexOf('/');
       String queryName = inputFileName.substring(index + 1);
       queryName = queryName.split("\\.")[0];
-      outputFileNames[i] = "/tmp/" + testId + "_" + queryName + ".output";
+      outputFileNames[i] = drillOutputDirName + "/" + testId + "_" + queryName
+          + ".output_" + new Date().toString();
     }
     return outputFileNames;
   }
@@ -350,8 +364,9 @@ public class DrillTestBase {
         if (areOrderByQueries != null) {
           isOrderByQuery = areOrderByQueries[i];
         }
-        TestVerifier.TEST_STATUS status = TestVerifier.verifyExpectedActualFiles(
-            expectedOutputs[i], actualOutputs[i], isOrderByQuery);
+        TestVerifier.TEST_STATUS status = TestVerifier
+            .verifyResultSet(expectedOutputs[i], actualOutputs[i],
+                isOrderByQuery);
         if (status != TestVerifier.TEST_STATUS.PASS) {
           TestVerifier.testStatus = status;
           break;

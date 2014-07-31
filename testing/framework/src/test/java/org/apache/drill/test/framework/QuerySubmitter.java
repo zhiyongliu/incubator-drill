@@ -180,11 +180,13 @@ public class QuerySubmitter {
     RunThread runThread = new RunThread(command);
     processThread(runThread, timeout);
     Process process = runThread.getProcess();
-    Scanner scanner = new Scanner(process.getInputStream()).useDelimiter("\\A");
+    Scanner scanner = new Scanner(process.getInputStream());
+    scanner.useDelimiter("\\A");
     String output = scanner.hasNext() ? scanner.next() : "";
     PrintWriter writer = new PrintWriter(outputFileName);
     writer.write(output);
     writer.close();
+    scanner.close();
   }
 
   /**

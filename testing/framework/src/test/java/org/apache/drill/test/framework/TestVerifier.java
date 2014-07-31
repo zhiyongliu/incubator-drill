@@ -60,9 +60,9 @@ public class TestVerifier {
    * @return {@link TEST_STATUS}
    * @throws Exception
    */
-  public static TEST_STATUS verifyExpectedActualFiles(String expectedOutput,
+  public static TEST_STATUS verifyResultSet(String expectedOutput,
       String actualOutput) throws Exception {
-    return verifyExpectedActualFiles(expectedOutput, actualOutput, false);
+    return verifyResultSet(expectedOutput, actualOutput, false);
   }
 
   /**
@@ -78,7 +78,7 @@ public class TestVerifier {
    * @return {@link TEST_STATUS}
    * @throws Exception
    */
-  public static TEST_STATUS verifyExpectedActualFiles(String expectedOutput,
+  public static TEST_STATUS verifyResultSet(String expectedOutput,
       String actualOutput, boolean verifyOrderBy) throws Exception {
     if (testStatus == TEST_STATUS.EXECUTION_FAILURE) {
       return testStatus;
@@ -123,11 +123,11 @@ public class TestVerifier {
   }
 
   /**
-   * Loads content of a result set file into a RelaxedMap object.
+   * Loads content of a result set file into a Map object.
    * 
    * @param filename
    *          name of file containing result sets
-   * @return RelaxedMap of result set
+   * @return map of result set
    * @throws Exception
    */
   private static Map<ColumnList, Integer> loadFromFileToMap(String filename,
