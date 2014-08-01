@@ -338,6 +338,12 @@ public class TestVerifier {
     loadFromFileToMap(filename, true);
     Map<Integer, String> columnIndexAndOrder = getColumnIndexAndOrder(
         columnLabels, orderByColumns);
+    if (columnIndexAndOrder == null) {
+      LOG.debug("skipping order verification");
+      LOG.info("\nTest passed.");
+      return TEST_STATUS.PASS;
+    }
+
     if (!isOrdered(columnIndexAndOrder)) {
       LOG.info("\nOrder mismatch in actual result set.");
       return TEST_STATUS.ORDER_MISMATCH;
@@ -351,6 +357,9 @@ public class TestVerifier {
     Map<Integer, String> columnIndexAndOrder = new LinkedHashMap<Integer, String>();
     List<Integer> indicesOfOrderByColumns = getIndicesOfOrderByColumns(
         columnLabels, orderByColumns);
+    if (indicesOfOrderByColumns == null) {
+      return null;
+    }
     for (int i = 0; i < indicesOfOrderByColumns.size(); i++) {
       columnIndexAndOrder.put(indicesOfOrderByColumns.get(i),
           orderByColumns.get(orderByColumns.keySet().toArray()[i]));
@@ -362,7 +371,11 @@ public class TestVerifier {
       List<String> columnLabels, Map<String, String> orderByColumns) {
     List<Integer> indices = new ArrayList<Integer>();
     for (Map.Entry<String, String> entry : orderByColumns.entrySet()) {
-      indices.add(columnLabels.indexOf(entry.getKey()));
+      int index = columnLabels.indexOf(entry.getKey());
+      if (index < 0) {
+        return null;
+      }
+      indices.add(index);
     }
     return indices;
   }
