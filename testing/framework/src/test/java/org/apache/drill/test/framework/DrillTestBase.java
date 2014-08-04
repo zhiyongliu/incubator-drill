@@ -63,6 +63,7 @@ public class DrillTestBase {
       .get("DRILL_HOME") + "/bin/sqlline";
   private static final String SUBMIT_PLAN_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/submit_plan";
+  String drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
   private Connection connection = null;
   private Statement statement = null;
   private ResultSet resultSet = null;
@@ -216,7 +217,10 @@ public class DrillTestBase {
       String[] outputFormats, String[] expectedFiles, String[] schemas,
       String[] verificationTypes) throws Exception {
     logTestStart();
-    String[] outputFileNames = generateOutputFileNames(inputFileNames, testId);
+    String[] outputFileNames = generateOutputFileNames(inputFileNames, testId,
+        false);
+    String[] planFileNames = generateOutputFileNames(inputFileNames, testId,
+        true);
     List<List<String>> allColumnLabels = new ArrayList<List<String>>();
     List<Map<String, String>> allOrderByColumns = new ArrayList<Map<String, String>>();
     boolean[] areOrderByQueries = new boolean[inputFileNames.length];
@@ -270,8 +274,8 @@ public class DrillTestBase {
                     allOrderByColumns.add(null);
                   }
                   allColumnLabels.add(submitter.getColumnLabels());
-                  submitter.generatePlan(statement, query, queryString,
-                      "physical", executionTime);
+                  submitter.generatePlan(statement, planFileNames[i],
+                      queryString, "physical", executionTime);
                 } catch (Exception e) {
                   continue;
                 }
@@ -325,9 +329,7 @@ public class DrillTestBase {
   }
 
   private String[] generateOutputFileNames(String[] inputFileNames,
-      String testId) throws IOException {
-    String drillOutputDirName = "";
-    drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
+      String testId, boolean isPlan) throws IOException {
     if (drillOutputDirName == null) {
       drillOutputDirName = "/tmp";
     }
@@ -345,8 +347,12 @@ public class DrillTestBase {
       int index = inputFileName.lastIndexOf('/');
       String queryName = inputFileName.substring(index + 1);
       queryName = queryName.split("\\.")[0];
-      outputFileNames[i] = drillOutputDirName + "/" + testId + "_" + queryName
-          + ".output_" + new Date().toString();
+      outputFileNames[i] = drillOutputDirName + "/" + testId + "_" + queryName;
+      if (isPlan) {
+        outputFileNames[i] += ".plan";
+      } else {
+        outputFileNames[i] += ".output_" + new Date().toString();
+      }
     }
     return outputFileNames;
   }
@@ -364,9 +370,8 @@ public class DrillTestBase {
         if (areOrderByQueries != null) {
           isOrderByQuery = areOrderByQueries[i];
         }
-        TestVerifier.TEST_STATUS status = TestVerifier
-            .verifyResultSet(expectedOutputs[i], actualOutputs[i],
-                isOrderByQuery);
+        TestVerifier.TEST_STATUS status = TestVerifier.verifyResultSet(
+            expectedOutputs[i], actualOutputs[i], isOrderByQuery);
         if (status != TestVerifier.TEST_STATUS.PASS) {
           TestVerifier.testStatus = status;
           break;

@@ -190,20 +190,25 @@ public class QuerySubmitter {
   }
 
   /**
+   * Generates physical or logical plan files.
    * 
+   * @param statement
+   *          statement used
+   * @param planFileName
+   *          name of plan file
    * @param queryString
-   *          query to generate plans for
+   *          query for which plan is being generated
    * @param type
    *          physical or logical
+   * @param timeout
+   *          time allowed for generation of plan file
    * @throws Exception
    */
-  public void generatePlan(Statement statement, String inputFileName,
+  public void generatePlan(Statement statement, String planFileName,
       String queryString, String type, long timeout) throws Exception {
     String query = "explain plan ";
-    String extension = ".p";
     if (type.equals("logical")) {
       query += "without implementation ";
-      extension = ".l";
     }
     query += "for " + queryString;
     ResultSet resultSet = null;
@@ -221,9 +226,6 @@ public class QuerySubmitter {
         resultSet.close();
       }
     }
-    String planFileName = inputFileName.substring(0,
-        inputFileName.lastIndexOf('.'))
-        + extension;
     BufferedWriter writer = new BufferedWriter(new FileWriter(new File(
         planFileName)));
     writer.write(planString);
@@ -382,7 +384,7 @@ public class QuerySubmitter {
       return exception;
     }
   }
-  
+
   public List<String> getColumnLabels() {
     return columnLabels;
   }
