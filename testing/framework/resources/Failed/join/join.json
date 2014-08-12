@@ -18,5 +18,10 @@
         }
     ],
     "datasources": [
+        {
+            "mode": "cp",
+            "src": "Datasources/join",
+            "dest": "chun"
+        }
     ]
 }
