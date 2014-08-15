@@ -1,0 +1,31 @@
+{
+    "testId": “p1tests-Failed”,
+    "type": "group",
+    "description": "Test p1tests function queries via jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+      {
+         "mode": "cp",
+         "src": "Datasources/p1tests/student",
+         "dest": "student"
+      },
+      {
+         "mode": "cp",
+         "src": "Datasources/p1tests/voter",
+         "dest": "voter"
+      }
+    ]
+}
