@@ -9,7 +9,7 @@
     "matrices": [
         {
             "query-file": ".*.q",
-            "schema": "dfs",
+            "schema": "dfs.drillTestDirConvert",
             "output-format": "tsv",
             "expected-file": ".*.e",
             "verification-type": [
@@ -21,7 +21,7 @@
         {
             "mode": "cp",
             "src": "Datasources/convert/",
-            "dest": "chun"
+            "dest": "convert"
         }
     ]
 }
