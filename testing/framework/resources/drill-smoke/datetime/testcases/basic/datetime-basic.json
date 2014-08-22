@@ -32,6 +32,11 @@
             "mode": "cp",
             "src": "datetime/datasources/interval.json",
             "dest": "datetime/datasources/interval.json"
+        },
+        {
+            "mode": "cp",
+            "src": "datetime/datasources/data",
+            "dest": "datetime/datasources/data"
         }
     ]
 }

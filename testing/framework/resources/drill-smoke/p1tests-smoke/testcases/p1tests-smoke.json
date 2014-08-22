@@ -19,13 +19,13 @@
     "datasources": [
         {
             "mode": "cp",
-            "src": "p1tests/datasources/student.parquet",
-            "dest": "p1tests/student/student.parquet"
+            "src": "Datasources/p1tests/student",
+            "dest": "p1tests/student"
         },
         {
             "mode": "cp",
-            "src": "p1tests/datasources/voter.parquet",
-            "dest": "p1tests/voter/voter.parquet"
+            "src": "Datasources/p1tests/voter",
+            "dest": "p1tests/voter"
         }
     ]
 }
