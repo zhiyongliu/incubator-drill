@@ -383,6 +383,9 @@ public class DrillTestBase {
   private void verifyAllOutputsOrders(String[] actualOutputs,
       List<List<String>> allColumnLabels,
       List<Map<String, String>> allOrderByColumns) throws Exception {
+    if (allOrderByColumns == null || allOrderByColumns.size() == 0) {
+      return;
+    }
     for (int i = 0; i < actualOutputs.length; i++) {
       if (allOrderByColumns.get(i) != null) {
         TestVerifier.TEST_STATUS status = TestVerifier.verifyResultSetOrders(
