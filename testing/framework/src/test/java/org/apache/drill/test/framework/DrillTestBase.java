@@ -95,6 +95,14 @@ public class DrillTestBase {
     } catch (Exception e) {
       LOG.debug("No timeout specified");
     }
+    try {
+      String filename = System.getProperty("user.dir")
+          + "/src/main/resources/dfs-storage-plugin.template";
+      String ipAddress = drillProperties.get("DRILL_STORAGE_PLUGIN_SERVER");
+      Utils.updateDrillStoragePlugin(filename, ipAddress, "dfs");
+    } catch (Exception e) {
+      Assert.fail("Error: Failed to uplaod dfs storage plugin.");
+    }
   }
 
   @AfterClass
@@ -160,20 +168,23 @@ public class DrillTestBase {
     prepareData(datasources);
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
+      String url = "";
       if (!connectionMap.containsKey(schema) || restartDrillBit) {
-        String url = "jdbc:drill:schema=" + schema + ";zk="
+        url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.debug("Connecting to " + url);
         connection = DriverManager.getConnection(url);
         statement = connection.createStatement();
         connectionMap.put(schema, new Pair(connection, statement));
-        if (optionFile != null) {
-          String[] optionQueries = Utils.getSqlStatements(optionFile);
-          for (String optionQuery : optionQueries) {
-            submitter = new QuerySubmitter(schemas[0]);
-            submitter.submitQueryJDBC(optionQuery, statement,
-                QuerySubmitter.TIMEOUT_SECONDS);
-          }
+      } else {
+        statement = connectionMap.get(schema).getStatement();
+      }
+      if (optionFile != null) {
+        String[] optionQueries = Utils.getSqlStatements(optionFile);
+        for (String optionQuery : optionQueries) {
+          submitter = new QuerySubmitter(schema);
+          submitter.submitQueryJDBC(optionQuery, statement,
+              QuerySubmitter.TIMEOUT_SECONDS);
         }
       }
     }
@@ -289,12 +300,12 @@ public class DrillTestBase {
       }
     }
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.TIMEOUT) {
-      summaryFailed += "***[timedout] " + query + "\n";
+      summaryFailed += "[timedout] " + query + "\n";
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.EXECUTION_FAILURE) {
-      summaryFailed += "***[execution failure] " + query + "\n";
+      summaryFailed += "[execution failure] " + query + "\n";
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
@@ -314,13 +325,13 @@ public class DrillTestBase {
     }
     switch (TestVerifier.testStatus) {
     case PASS:
-      summaryPassing += "*** " + query + "\n";
+      summaryPassing += query + "\n";
       break;
     case VERIFICATION_FAILURE:
-      summaryFailed += "***[verification failure] " + query + "\n";
+      summaryFailed += "[verification failure] " + query + "\n";
       break;
     case ORDER_MISMATCH:
-      summaryFailed += "***[order mismatch] " + query + "\n";
+      summaryFailed += "[order mismatch] " + query + "\n";
       break;
     default:
       break;
@@ -383,6 +394,9 @@ public class DrillTestBase {
   private void verifyAllOutputsOrders(String[] actualOutputs,
       List<List<String>> allColumnLabels,
       List<Map<String, String>> allOrderByColumns) throws Exception {
+    if (allOrderByColumns == null || allOrderByColumns.size() == 0) {
+      return;
+    }
     for (int i = 0; i < actualOutputs.length; i++) {
       if (allOrderByColumns.get(i) != null) {
         TestVerifier.TEST_STATUS status = TestVerifier.verifyResultSetOrders(
@@ -429,7 +443,7 @@ public class DrillTestBase {
     }
   }
 
-  private void hdfsCopy(String src, String dest, boolean overWrite)
+  private synchronized void hdfsCopy(String src, String dest, boolean overWrite)
       throws IOException {
     FileSystem fs = FileSystem.get(new Configuration());
     Path srcPath = new Path(src);
