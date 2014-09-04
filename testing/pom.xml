@@ -111,6 +111,13 @@
 			<version>${drill.version}</version>
 			<type>pom</type>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>${apache-httpcomponents.version}</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

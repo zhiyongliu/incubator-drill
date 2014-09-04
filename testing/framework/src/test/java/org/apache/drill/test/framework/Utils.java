@@ -21,7 +21,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,6 +34,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 /**
  * Collection of utilities supporting the drill test framework.
@@ -174,5 +183,53 @@ public class Utils {
       typesInStrings.add(map.get(type));
     }
     return typesInStrings;
+  }
+
+  /**
+   * Updates storage plugin for drill
+   * 
+   * @param filename
+   *          name of file containing drill storage plugin
+   * @param ipAddress
+   *          IP address of node to update storage plugin for
+   * @param pluginType
+   *          type of plugin; e.g.: "dfs", "cp"
+   * @return
+   */
+  public static boolean updateDrillStoragePlugin(String filename,
+      String ipAddress, String pluginType) {
+    try {
+      StringBuilder builder = new StringBuilder();
+      builder.append("http://" + ipAddress + ":8047/storage/" + pluginType);
+      HttpPost post = new HttpPost(builder.toString() + ".json");
+      post.setHeader("Content-Type", "application/json");
+      String path = new File(filename).getAbsolutePath();
+      byte[] encoded = Files.readAllBytes(Paths.get(path));
+      String fileContent = new String(encoded, "UTF-8");
+      post.setEntity(new StringEntity(fileContent));
+      DefaultHttpClient client = new DefaultHttpClient();
+      HttpResponse response = client.execute(post);
+      return isResponseSuccessful(response);
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  private static boolean isResponseSuccessful(HttpResponse response)
+      throws Exception {
+    Reader reader = new BufferedReader(new InputStreamReader(response
+        .getEntity().getContent(), "UTF-8"));
+    StringBuilder builder = new StringBuilder();
+    char[] buffer = new char[1024];
+    int l = 0;
+    while (l >= 0) {
+      builder.append(buffer, 0, l);
+      l = reader.read(buffer);
+    }
+    if (builder.toString().toLowerCase().contains("\"result\" : \"success\"")) {
+      return true;
+    } else {
+      return false;
+    }
   }
 }
