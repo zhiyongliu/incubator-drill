@@ -36,7 +36,9 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
@@ -186,6 +188,26 @@ public class Utils {
   }
 
   /**
+   * Saves content of existing drill storage plugins.
+   * 
+   * @param ipAddress
+   *          IP address of node to update storage plugin for
+   * @param pluginType
+   *          type of plugin; e.g.: "dfs", "cp"
+   * @return content of the specified plugin
+   * @throws Exception
+   */
+  public static String getExistingDrillStoragePlugin(String ipAddress,
+      String pluginType) throws Exception {
+    StringBuilder builder = new StringBuilder();
+    builder.append("http://" + ipAddress + ":8047/storage/" + pluginType);
+    HttpUriRequest request = new HttpGet(builder.toString() + ".json");
+    DefaultHttpClient client = new DefaultHttpClient();
+    HttpResponse response = client.execute(request);
+    return getHttpResponseAsString(response);
+  }
+
+  /**
    * Updates storage plugin for drill
    * 
    * @param filename
@@ -194,19 +216,34 @@ public class Utils {
    *          IP address of node to update storage plugin for
    * @param pluginType
    *          type of plugin; e.g.: "dfs", "cp"
-   * @return
+   * @return true if operation is successful
    */
   public static boolean updateDrillStoragePlugin(String filename,
-      String ipAddress, String pluginType) {
+      String ipAddress, String pluginType) throws Exception {
+    String content = getFileContent(filename);
+    return postDrillStoragePlugin(content, ipAddress, pluginType);
+  }
+
+  /**
+   * Posts/updates drill storage plugin content
+   * 
+   * @param content
+   *          string containing drill storage plugin
+   * @param ipAddress
+   *          IP address of node to update storage plugin for
+   * @param pluginType
+   *          type of plugin; e.g.: "dfs", "cp"
+   * @return true if operation is successful
+   * @throws Exception
+   */
+  public static boolean postDrillStoragePlugin(String content,
+      String ipAddress, String pluginType) throws Exception {
     try {
       StringBuilder builder = new StringBuilder();
       builder.append("http://" + ipAddress + ":8047/storage/" + pluginType);
       HttpPost post = new HttpPost(builder.toString() + ".json");
       post.setHeader("Content-Type", "application/json");
-      String path = new File(filename).getAbsolutePath();
-      byte[] encoded = Files.readAllBytes(Paths.get(path));
-      String fileContent = new String(encoded, "UTF-8");
-      post.setEntity(new StringEntity(fileContent));
+      post.setEntity(new StringEntity(content));
       DefaultHttpClient client = new DefaultHttpClient();
       HttpResponse response = client.execute(post);
       return isResponseSuccessful(response);
@@ -215,7 +252,13 @@ public class Utils {
     }
   }
 
-  private static boolean isResponseSuccessful(HttpResponse response)
+  private static String getFileContent(String filename) throws Exception {
+    String path = new File(filename).getAbsolutePath();
+    byte[] encoded = Files.readAllBytes(Paths.get(path));
+    return new String(encoded, "UTF-8");
+  }
+
+  private static String getHttpResponseAsString(HttpResponse response)
       throws Exception {
     Reader reader = new BufferedReader(new InputStreamReader(response
         .getEntity().getContent(), "UTF-8"));
@@ -226,10 +269,12 @@ public class Utils {
       builder.append(buffer, 0, l);
       l = reader.read(buffer);
     }
-    if (builder.toString().toLowerCase().contains("\"result\" : \"success\"")) {
-      return true;
-    } else {
-      return false;
-    }
+    return builder.toString();
+  }
+
+  private static boolean isResponseSuccessful(HttpResponse response)
+      throws Exception {
+    return getHttpResponseAsString(response).toLowerCase().contains(
+        "\"result\" : \"success\"");
   }
 }
