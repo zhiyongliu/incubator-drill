@@ -119,6 +119,21 @@
         "location" : "/drill/testdata/newWS/",
         "writable" : true,
         "storageformat" : null
+      },
+      "drillTestDirTpch01Text" : {
+        "location" : "/drill/testdata/Tpch0.01/text/",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirTpch01Json" : {
+        "location" : "/drill/testdata/Tpch0.01/json/",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirTpch01Parquet" : {
+        "location" : "/drill/testdata/Tpch0.01/parquet/",
+        "writable" : true,
+        "storageformat" : null
       }
     },
     "formats" : {
