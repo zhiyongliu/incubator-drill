@@ -40,6 +40,7 @@
 		<drill.version>0.5.0-incubating-SNAPSHOT</drill.version>
 		<mapr.hadoop.version>1.0.3-mapr-3.0.2</mapr.hadoop.version>
 		<runtimeDepenencies>/etc/drill/conf</runtimeDepenencies>
+		<apache-httpcomponents.version>4.1.1</apache-httpcomponents.version>
 	</properties>
 
 	<dependencies>
