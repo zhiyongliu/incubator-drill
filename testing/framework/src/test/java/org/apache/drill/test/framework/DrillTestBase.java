@@ -74,6 +74,10 @@ public class DrillTestBase {
   private String optionFile = null;
   private boolean restartDrillBit = false;
   private static long executionTime = QuerySubmitter.TIMEOUT_SECONDS;
+  private String ipAddressPlugin = drillProperties
+      .get("DRILL_STORAGE_PLUGIN_SERVER");
+  private String pluginContent = "";
+  private boolean loadPluginTemplate = true;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
@@ -95,20 +99,28 @@ public class DrillTestBase {
     } catch (Exception e) {
       LOG.debug("No timeout specified");
     }
-    try {
-      String filename = System.getProperty("user.dir")
-          + "/src/main/resources/dfs-storage-plugin.template";
-      String ipAddress = drillProperties.get("DRILL_STORAGE_PLUGIN_SERVER");
-      Utils.updateDrillStoragePlugin(filename, ipAddress, "dfs");
-    } catch (Exception e) {
-      Assert.fail("Error: Failed to uplaod dfs storage plugin.");
+    loadPluginTemplate = Boolean.valueOf(System
+        .getProperty("load.plugin.template"));
+    if (loadPluginTemplate) {
+      try {
+        String filename = System.getProperty("user.dir")
+            + "/src/main/resources/dfs-storage-plugin.template";
+        pluginContent = Utils.getExistingDrillStoragePlugin(ipAddressPlugin,
+            "dfs");
+        Utils.updateDrillStoragePlugin(filename, ipAddressPlugin, "dfs");
+      } catch (Exception e) {
+        Assert.fail("Error: Failed to uplaod dfs storage plugin.");
+      }
     }
   }
 
   @AfterClass
-  public void afterClass() throws SQLException {
-    if (resultSet != null) {
-      resultSet.close();
+  public void afterClass() throws Exception {
+    if (loadPluginTemplate) {
+      Utils.postDrillStoragePlugin(pluginContent, ipAddressPlugin, "dfs");
+      if (resultSet != null) {
+        resultSet.close();
+      }
     }
     for (Map.Entry<String, Pair> entry : connectionMap.entrySet()) {
       Pair pair = entry.getValue();
