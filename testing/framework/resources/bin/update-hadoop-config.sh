@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #**************PRE-REQUISITES
 #DRILL_HOME should be set
