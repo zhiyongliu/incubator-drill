@@ -99,8 +99,11 @@ public class DrillTestBase {
     } catch (Exception e) {
       LOG.debug("No timeout specified");
     }
-    loadPluginTemplate = Boolean.valueOf(System
-        .getProperty("load.plugin.template"));
+    String loadPluginTemplateProperty = System
+        .getProperty("load.plugin.template");
+    if (loadPluginTemplateProperty != null) {
+      loadPluginTemplate = Boolean.valueOf(loadPluginTemplateProperty);
+    }
     if (loadPluginTemplate) {
       try {
         String filename = System.getProperty("user.dir")
