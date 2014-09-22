@@ -139,12 +139,12 @@ public class DrillTestBase {
   }
 
   private void restartDrillBit() throws Exception {
-    final String restartScript = "/root/drillAutomation/restartDrillBit.sh";
+    final String restartScript = "resources/bin/drill-restart.sh";
     if (!new File(restartScript).exists()) {
       return;
     }
     String[] command = { "/bin/bash", restartScript };
-    LOG.info("Restarting drillbits");
+    LOG.info("Restarting drillbits using \"" + restartScript + "\"");
     ProcessBuilder pb = new ProcessBuilder(command);
     pb.start().waitFor();
   }

@@ -20,8 +20,18 @@
     "datasources": [
         {
             "mode": "cp",
-            "src": "Datasources/convert/",
-            "dest": "convert"
+            "src": "Datasources/convert/data",
+            "dest": "convert/data"
+        },
+        {
+            "mode": "cp",
+            "src": "Datasources/convert/input2.json",
+            "dest": "convert/input2.json"
+        },
+        {
+            "mode": "cp",
+            "src": "Datasources/convert/vvtypes.json",
+            "dest": "convert/vvtypes.json"
         }
     ]
 }

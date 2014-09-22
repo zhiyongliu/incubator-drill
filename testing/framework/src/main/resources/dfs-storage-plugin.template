@@ -134,6 +134,11 @@
         "location" : "/drill/testdata/Tpch0.01/parquet/",
         "writable" : true,
         "storageformat" : null
+      },
+      "drillTestDirConvert" : {
+        "location" : "/drill/testdata/convert",
+        "writable" : true,
+        "storageformat" : null
       }
     },
     "formats" : {
