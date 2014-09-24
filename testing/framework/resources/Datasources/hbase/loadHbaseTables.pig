@@ -1,5 +1,5 @@
-register /opt/mapr/hbase/hbase-0.94.17/lib/zookeeper-3.4.5-mapr-1401.jar;
-register /opt/mapr/hbase/hbase-0.94.17/hbase-0.94.17-mapr-1403-SNAPSHOT.jar;
+register /opt/mapr/hbase/hbase-0.94.17/lib/zookeeper-3.4.5-mapr-1406.jar;
+register /opt/mapr/hbase/hbase-0.94.17/hbase-0.94.17-mapr-1405.jar;
 register /opt/mapr/hbase/hbase-0.94.17/lib/guava-11.0.2.jar;
 
 A = LOAD '/drill/testdata/hbase/votertab' AS (id,name,age,registration,contributions,voterzone,create_date);
