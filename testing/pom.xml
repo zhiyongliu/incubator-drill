@@ -122,6 +122,41 @@
 	</dependencies>
 
 	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.googlecode.maven-download-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<version>1.2.0</version>
+				<executions>
+					<execution>
+						<id>install-tpcds-tgz-parquet</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>http://apache-drill.s3.amazonaws.com/files/tpcds-sf1-parquet.tgz</url>
+							<outputFileName>tpcds-sf1-parquet.tgz</outputFileName>
+							<unpack>true</unpack>
+							<outputDirectory>${project.basedir}/resources/Datasources/tpcds-sf1-parquet</outputDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>install-tpcds-tgz-text</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<url>http://apache-drill.s3.amazonaws.com/files/tpcds-sf1-text.tgz</url>
+							<outputFileName>tpcds-sf1-text.tgz</outputFileName>
+							<unpack>true</unpack>
+							<outputDirectory>${project.basedir}/resources/Datasources/tpcds-sf1-text</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 		<pluginManagement>
 			<plugins>
 				<plugin>
