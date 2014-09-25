@@ -139,6 +139,31 @@
         "location" : "/drill/testdata/convert",
         "writable" : true,
         "storageformat" : null
+      },
+      "drillTestDirTpch100Text" : {
+        "location" : "/drill/testdata/tpch100/text/",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirTpch100Parquet" : {
+        "location" : "/drill/testdata/tpch100/parquet",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirAggregate1parquet" : {
+        "location" : "/drill/testdata/tpcds/parquet/s1",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirMondrian" : {
+        "location" : "/drill/testdata/mondrian",
+        "writable" : true,
+        "storageformat" : null
+      },
+      "drillTestDirTpcdsImpalaSF1" : {
+        "location" : "/drill/testdata/tpcds_imp_sf1",
+        "writable" : true,
+        "storageformat" : null
       }
     },
     "formats" : {
