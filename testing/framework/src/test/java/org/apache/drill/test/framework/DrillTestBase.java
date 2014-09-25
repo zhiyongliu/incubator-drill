@@ -74,10 +74,13 @@ public class DrillTestBase {
   private String optionFile = null;
   private boolean restartDrillBit = false;
   private static long executionTime = QuerySubmitter.TIMEOUT_SECONDS;
+  private static Map<String, Boolean> queryStatusMap = new HashMap<String, Boolean>();
+  private static Map<String, Boolean> expectedStatusMap = new HashMap<String, Boolean>();
   private String ipAddressPlugin = drillProperties
       .get("DRILL_STORAGE_PLUGIN_SERVER");
   private String pluginContent = "";
   private boolean loadPluginTemplate = true;
+  private boolean moveTests = false;
 
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
@@ -103,6 +106,10 @@ public class DrillTestBase {
         .getProperty("load.plugin.template");
     if (loadPluginTemplateProperty != null) {
       loadPluginTemplate = Boolean.valueOf(loadPluginTemplateProperty);
+    }
+    String moveTestsProperty = System.getProperty("move.tests");
+    if (moveTestsProperty != null) {
+      moveTests = Boolean.valueOf(moveTestsProperty);
     }
     if (loadPluginTemplate) {
       try {
@@ -136,6 +143,10 @@ public class DrillTestBase {
     }
     LOG.info(summaryPassing);
     LOG.info(summaryFailed);
+    if (moveTests) {
+      relocateTests(queryStatusMap);
+      relocateTests(expectedStatusMap);
+    }
   }
 
   private void restartDrillBit() throws Exception {
@@ -316,11 +327,19 @@ public class DrillTestBase {
     }
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.TIMEOUT) {
       summaryFailed += "[timedout] " + query + "\n";
+      if (moveTests) {
+        queryStatusMap.put(query, false);
+        expectedStatusMap.put(expectedFiles[0], false);
+      }
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
     if (TestVerifier.testStatus == TestVerifier.TEST_STATUS.EXECUTION_FAILURE) {
       summaryFailed += "[execution failure] " + query + "\n";
+      if (moveTests) {
+        queryStatusMap.put(query, false);
+        expectedStatusMap.put(expectedFiles[0], false);
+      }
       logTestEnd(testId, TestVerifier.testStatus);
       return;
     }
@@ -341,12 +360,24 @@ public class DrillTestBase {
     switch (TestVerifier.testStatus) {
     case PASS:
       summaryPassing += query + "\n";
+      if (moveTests) {
+        queryStatusMap.put(query, true);
+        expectedStatusMap.put(expectedFiles[0], true);
+      }
       break;
     case VERIFICATION_FAILURE:
       summaryFailed += "[verification failure] " + query + "\n";
+      if (moveTests) {
+        queryStatusMap.put(query, false);
+        expectedStatusMap.put(expectedFiles[0], false);
+      }
       break;
     case ORDER_MISMATCH:
       summaryFailed += "[order mismatch] " + query + "\n";
+      if (moveTests) {
+        queryStatusMap.put(query, false);
+        expectedStatusMap.put(expectedFiles[0], false);
+      }
       break;
     default:
       break;
@@ -532,6 +563,36 @@ public class DrillTestBase {
       }
     }
     return orderByColumns;
+  }
+
+  private void relocateTests(Map<String, Boolean> map) {
+    if (!moveTests) {
+      return;
+    }
+    for (Map.Entry<String, Boolean> entry : map.entrySet()) {
+      String query = entry.getKey();
+      boolean status = entry.getValue();
+      if (isQueryMatchingStatus(query, status)) {
+        continue;
+      } else {
+        String destination = "";
+        if (!status) {
+        } else {
+          destination = query.replaceAll("Failed", "Regression");
+          destination = destination.replaceAll("Future", "Regression");
+        }
+        File sourceFile = new File(query);
+        sourceFile.renameTo(new File(destination));
+      }
+    }
+  }
+
+  private boolean isQueryMatchingStatus(String query, boolean status) {
+    if (query.indexOf("Regression") >= 0) {
+      return status == true;
+    } else {
+      return status == false;
+    }
   }
 
   private class Pair {
