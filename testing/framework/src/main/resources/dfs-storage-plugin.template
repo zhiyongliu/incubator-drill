@@ -161,7 +161,7 @@
         "storageformat" : null
       },
       "drillTestDirTpcdsImpalaSF1" : {
-        "location" : "/drill/testdata/tpcds_imp_sf1",
+        "location" : "/drill/testdata/tpcds-impala-sf1",
         "writable" : true,
         "storageformat" : null
       },
