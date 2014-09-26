@@ -20,8 +20,8 @@
     "datasources": [
         {
             "mode": "cp",
-            "src": "Datasources/aggregate1/parquet/customer",
-            "dest": "tpcds/parquet/s1/customer"
+            "src": "Datasources/tpcds-sf1-parquet/",
+            "dest": "tpcds/parquet/s1"
         }
     ]
 }

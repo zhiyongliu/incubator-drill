@@ -164,7 +164,22 @@
         "location" : "/drill/testdata/tpcds_imp_sf1",
         "writable" : true,
         "storageformat" : null
-      }
+      },
+	"sandbox": {
+      "location": "/sandbox",
+      "writable": true,
+      "storageformat": "parquet"
+    },
+    "sandbox-logs": {
+      "location": "/sandbox/flat",
+      "writable": true,
+      "storageformat": "parquet"
+    },
+    "sandbox-json": {
+      "location": "/sandbox/json",
+      "writable": true,
+      "storageformat": "parquet"
+    }
     },
     "formats" : {
       "psv" : {
