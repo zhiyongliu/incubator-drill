@@ -119,7 +119,7 @@ public class ColumnList {
     for (Object o : list) {
       sb.append(o + "\t");
     }
-    return sb.toString().trim();
+    return sb.toString();
   }
 
   private boolean compare(ColumnList o1, ColumnList o2) {
