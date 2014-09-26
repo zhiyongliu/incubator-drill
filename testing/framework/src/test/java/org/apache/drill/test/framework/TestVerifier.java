@@ -149,7 +149,6 @@ public class TestVerifier {
     String line = "";
     mapSize = 0;
     while ((line = reader.readLine()) != null) {
-      line = line.trim();
       String[] fields = line.split("\t");
       if (fields.length != size) {
         LOG.fatal("Error: expected data and actual data have different number of columns.");
@@ -343,7 +342,6 @@ public class TestVerifier {
       LOG.info("\nTest passed.");
       return TEST_STATUS.PASS;
     }
-
     if (!isOrdered(columnIndexAndOrder)) {
       LOG.info("\nOrder mismatch in actual result set.");
       return TEST_STATUS.ORDER_MISMATCH;
