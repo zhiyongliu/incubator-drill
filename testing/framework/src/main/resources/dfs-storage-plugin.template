@@ -155,6 +155,11 @@
         "writable" : true,
         "storageformat" : null
       },
+      "drillTestDirAggregate1csv" : {
+        "location" : "/drill/testdata/tpcds/csv/s1",
+        "writable" : true,
+        "storageformat" : null
+      },
       "drillTestDirMondrian" : {
         "location" : "/drill/testdata/mondrian",
         "writable" : true,
@@ -185,6 +190,11 @@
       "psv" : {
         "type" : "text",
         "extensions" : [ "tbl" ],
+        "delimiter" : "|"
+      },
+      "dsv" : {
+        "type" : "text",
+        "extensions" : [ "dat" ],
         "delimiter" : "|"
       },
       "csv" : {
