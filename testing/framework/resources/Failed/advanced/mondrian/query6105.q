@@ -1,0 +1,1 @@
+select product_csv.name1 as c0 from product_csv as product_csv, product_cat as product_cat, cat as cat where product_cat.cat = cat.cat and product_csv.prod_cat = product_cat.prod_cat and (product_cat.name2 = 'Prod Cat One' and cat.cat = 1) and UPPER(product_csv.name1) = UPPER('One') group by product_csv.name1 order by product_csv.name1 ASC NULLS LAST;

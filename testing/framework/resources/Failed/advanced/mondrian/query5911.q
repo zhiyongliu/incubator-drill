@@ -1,0 +1,1 @@
+select customerx.yearly_income as c0 from customer as customerx where UPPER(customerx.yearly_income) = UPPER('$150K +') group by customerx.yearly_income order by customerx.yearly_income ASC NULLS LAST;

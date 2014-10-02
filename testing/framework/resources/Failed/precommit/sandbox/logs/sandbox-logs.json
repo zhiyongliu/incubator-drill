@@ -1,0 +1,31 @@
+{
+    "testId": "sandbox",
+    "type": "group",
+    "description": "Test MapR Sandbox with Apache Drill queries via jdbc",
+    "categories": [
+        "smoke",
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.sandbox-logs",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+	{
+          "mode": "gen",
+          "src": "Datasources/sandbox/scripts/copydata.sh",
+          "dest": ""
+        },
+	{
+          "mode": "gen",
+          "src": "Datasources/sandbox/scripts/copylogs.sh",
+          "dest": ""
+        }
+    ]
+}

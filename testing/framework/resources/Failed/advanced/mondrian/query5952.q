@@ -1,0 +1,1 @@
+select customer.address2 as c0 from customer as customer, sales_fact_1997 as sales_fact_1997 where sales_fact_1997.customer_id = customer.customer_id and customer.city = 'Redwood City' group by customer.address2 order by customer.address2 ASC NULLS LAST;

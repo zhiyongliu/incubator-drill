@@ -1,0 +1,1 @@
+select nation.nation_name as c0, nation.nation_shortcode as c1 from store as store, (SELECT * FROM (VALUES ('USA', 'US'), ('Mexico', 'MX'), ('Canada', 'CA')) AS t (nation_name, nation_shortcode)) as nation where store.store_country = nation.nation_name group by nation.nation_name, nation.nation_shortcode order by nation.nation_name ASC NULLS LAST;

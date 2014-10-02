@@ -1,0 +1,1 @@
+select alt_promotion.promo_id as c0, alt_promotion.promo_name as c1 from (SELECT * FROM (VALUES (0, 'Promo0'), (1, 'Promo1')) AS t (promo_id, promo_name)) as alt_promotion group by alt_promotion.promo_id, alt_promotion.promo_name order by alt_promotion.promo_id ASC NULLS LAST;

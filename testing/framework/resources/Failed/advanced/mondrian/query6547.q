@@ -1,0 +1,1 @@
+selectn    time_by_day.month_of_year as c0nfromn    time_by_day as time_by_daynwheren    (time_by_day.quarter = 'Q1' and time_by_day.the_year = 1997)ngroup byn    time_by_day.month_of_yearnorder byn    time_by_day.month_of_year ASC NULLS LAST;

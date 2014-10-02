@@ -1,0 +1,1 @@
+select warehouse.wa_address2 as c0 from warehouse as warehouse where (warehouse.wa_address3 is null) and warehouse.wa_address2 is null group by warehouse.wa_address2 order by warehouse.wa_address2 ASC NULLS LAST;

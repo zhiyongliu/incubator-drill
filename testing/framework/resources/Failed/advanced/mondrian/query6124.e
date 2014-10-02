@@ -1,0 +1,25 @@
+Store 4	23759
+Store 16	30268
+Store 9	36509
+Store 2	28206
+Store 13	27694
+Store 11	20319
+Store 5	24597
+Store 12	30584
+Store 20	34452
+Store 17	33858
+Store 19	23112
+Store 18	38382
+Store 23	\N
+Store 7	23598
+HQ	\N
+Store 10	34791
+Store 6	23688
+Store 8	30797
+Store 21	\N
+Store 3	39696
+Store 14	22478
+Store 22	\N
+Store 15	21215
+Store 1	23593
+Store 24	\N
