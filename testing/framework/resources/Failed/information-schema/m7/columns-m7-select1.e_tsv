@@ -1,4 +1,0 @@
-DRILL	hbase	m7students	cf1	0	YES	ANY	-1	-1	-1
-DRILL	hbase	m7students	cf2	1	YES	ANY	-1	-1	-1
-DRILL	hbase	m7students	cf3	2	YES	ANY	-1	-1	-1
-DRILL	hbase	m7students	cf4	3	YES	ANY	-1	-1	-1
