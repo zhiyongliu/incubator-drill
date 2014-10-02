@@ -1,6 +1,0 @@
-DRILL	hive.default	hivestudents	id	0	YES	VARCHAR	24	-1	-1	-1
-DRILL	hive.default	hivestudents	name	1	YES	VARCHAR	24	-1	-1	-1
-DRILL	hive.default	hivestudents	street	2	YES	VARCHAR	256	-1	-1	-1
-DRILL	hive.default	hivestudents	zipcode	3	YES	INTEGER	-1	-1	-1	-1
-DRILL	hive.default	hivestudents	state	4	YES	VARCHAR	20	-1	-1	-1
-DRILL	hive.default	hivestudents	percentage	5	YES	DECIMAL	-1	10	0	38

@@ -1,4 +1,0 @@
-DRILL	hbase	hbase-students	row_key	0	YES	ANY	-1	-1	-1	-1
-DRILL	hbase	hbase-students	cf1	1	YES	(VARCHAR(1), ANY) MAP	-1	-1	-1	-1
-DRILL	hbase	hbase-students	cf2	2	YES	(VARCHAR(1), ANY) MAP	-1	-1	-1	-1
-DRILL	hbase	hbase-students	cf3	3	YES	(VARCHAR(1), ANY) MAP	-1	-1	-1	-1
