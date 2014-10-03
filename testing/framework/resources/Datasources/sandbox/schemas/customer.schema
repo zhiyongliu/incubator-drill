@@ -1,0 +1,8 @@
+create view custview as select cast(row_key as int) as cust_id,
+cast(t.personal.name as varchar(20)) as name, 
+cast(t.personal.gender as varchar(10)) as gender, 
+cast(t.personal.age as varchar(10)) as age, 
+cast(t.address.state as varchar(4)) as state,
+cast(t.loyalty.agg_rev as dec(7,2)) as agg_rev,
+cast(t.loyalty.membership as varchar(20)) as membership
+from maprdb.customers t;
