@@ -1,0 +1,3 @@
+create view lineitem as select cast(columns[0] as int) l_orderkey, cast(columns[1] as int) l_partkey, cast(columns[2] as int) l_suppkey, cast(columns[3] as int) l_linenumber, cast(columns[4] as double) l_quantity, cast(columns[5] as double) l_extendedprice, cast(columns[6] as double) l_discount, cast(columns[7] as double) l_tax, columns[8] l_returnflag, columns[9] l_linestatus, cast(columns[10] as date) l_shipdate, cast(columns[11] as date) l_commitdate, cast(columns[12] as date) l_receiptdate, columns[13] l_shipinstruct, columns[14] l_shipmode, columns[15] l_comment from `lineitem_text`;
+select count(*) from lineitem;
+drop view lineitem;
