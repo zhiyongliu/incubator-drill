@@ -66,6 +66,11 @@
        "mode": "gen",
        "src": "Datasources/hive_storage/execHive.sh resources/Datasources/hive_storage/alltypes.q",
        "dest": ""
+    },
+    {
+       "mode": "gen",
+       "src": "Datasources/hive_storage/execHive.sh resources/Datasources/hive_storage/hive_hbase.q",
+       "dest": ""
     }                            
    ]
 }
