@@ -1,0 +1,1 @@
+select cast(row_key as integer) student_id, cast(t.onecf.name as varchar(30)) name, cast(t.twocf.age as integer) age, cast(t.threecf.gpa as decimal(4,2)) gpa, cast(t.fourcf.studentnum as bigint) student_num, cast(t.fivecf.create_date as timestamp) create_date from m7student t where row_key < 800 and row_key > 750;
