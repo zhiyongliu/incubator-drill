@@ -1,0 +1,1 @@
+select cat.cat as c0, cat.cap as c1, cat.ord as c2, cat.name3 as c3 from product_csv as product_csv, product_cat as product_cat, cat as cat where product_cat.cat = cat.cat and product_csv.prod_cat = product_cat.prod_cat and UPPER(cat.name3) = UPPER('Cat One') group by cat.cat, cat.cap, cat.ord, cat.name3 order by cat.ord ASC NULLS LAST;

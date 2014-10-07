@@ -1,0 +1,1 @@
+select RTRIM(promotion_name) as c0 from promotion as promotion, agg_c_14_sales_fact_1997 as agg_c_14_sales_fact_1997 where agg_c_14_sales_fact_1997.promotion_id = promotion.promotion_id group by RTRIM(promotion_name) order by RTRIM(promotion_name) ASC NULLS LAST;

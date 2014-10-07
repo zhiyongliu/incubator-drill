@@ -1,0 +1,1 @@
+selectn    store.store_city as c0nfromn    store as storenwheren    (store.store_state = 'CA')nandn    UPPER(store.store_city) = UPPER('Los Angeles')ngroup byn    store.store_citynorder byn    store.store_city ASC NULLS LAST;

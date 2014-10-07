@@ -1,0 +1,1 @@
+selectn    customer.city as c0nfromn    customer as customernwheren    (customer.state_province = 'CA')nandn    UPPER(customer.city) = UPPER('Los Angeles')ngroup byn    customer.citynorder byn    customer.city ASC NULLS LAST;

@@ -1,0 +1,40 @@
+{
+    "testId": "information-schema-m7",
+    "type": "group",
+    "description": "Test information schema using m7 as the backend",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirInformationSchema",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+           "mode": "gen",
+           "src": "bin/emptyDrillTables.sh",
+           "dest": ""
+        },
+        {
+           "mode": "gen",
+           "src": "bin/update-hadoop-config.sh resources/information-schema/datasources/m7.xml",
+           "dest": ""
+        },
+        {
+           "mode": "restart-drill"
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHBase.sh resources/information-schema/datasources/m7.ddl",
+           "dest": ""
+        }
+    ]
+}

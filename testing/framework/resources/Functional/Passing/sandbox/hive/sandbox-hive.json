@@ -1,0 +1,31 @@
+{
+    "testId": "sandbox-hive",
+    "type": "group",
+    "description": "Test MapR Sandbox with Apache Drill queries via jdbc",
+    "categories": [
+        "smoke",
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "hive",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+	{
+          "mode": "gen",
+          "src": "Datasources/sandbox/scripts/copydata.sh",
+          "dest": ""
+        },
+	{
+          "mode": "gen",
+          "src": "Datasources/sandbox/scripts/orders.sh",
+          "dest": ""
+        }
+    ]
+}

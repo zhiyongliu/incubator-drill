@@ -1,0 +1,1 @@
+select avg(cast(columns[6] as int)) as average, stddev_samp(cast(columns[6] as int)) as stddsamp, stddev_pop(cast(columns[6] as int)) as stddpop , var_samp(cast(columns[6] as int)) as varsamp, var_pop(cast(columns[6] as int)) as varpop from store;

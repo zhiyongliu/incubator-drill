@@ -1,0 +1,1 @@
+select store.store_name as c0, case store_name when 'HQ' then null else store_name end as c1, store.store_sqft as c2 from store as store group by store.store_name, case store_name when 'HQ' then null else store_name end, store.store_sqft order by sum(store.store_sqft) DESC NULLS LAST, case store_name when 'HQ' then null else store_name end ASC NULLS LAST;

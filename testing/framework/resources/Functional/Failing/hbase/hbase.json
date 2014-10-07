@@ -1,0 +1,36 @@
+{
+    "testId": "hbase-Failed",
+    "type": "group",
+    "description": "Test hbase queries via jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "hbase",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+       {
+           "mode": "cp",
+           "src": "Datasources/hbase/studenttab",
+           "dest": "hbase"
+       },
+       {
+           "mode": "cp",
+           "src": "Datasources/hbase/votertab",
+           "dest": "hbase"
+       },
+       {
+           "mode": "gen",
+           "src": "Datasources/hbase/hbase.sh",
+           "dest": ""
+       }
+   ]
+}

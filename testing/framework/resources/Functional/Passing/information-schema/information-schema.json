@@ -1,0 +1,50 @@
+{
+    "testId": "information-schema-hive",
+    "type": "group",
+    "description": "Test information schema in drill using ",
+    "submit-type": "jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*.q",
+            "schema": "dfs.drillTestDirInformationSchema",
+            "output-format": "tsv",
+            "expected-file": ".*.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+        {
+           "mode": "gen",
+           "src": "bin/emptyDrillTables.sh",
+           "dest": ""
+        },
+        {
+            "mode": "cp",
+            "src": "Datasources/information-schema/students.txt",
+            "dest": "information-schema/hive/students/students.txt"
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHive.sh resources/Datasources/information-schema/hive.ddl",
+           "dest": ""
+        },
+        {
+           "mode": "gen",
+           "src": "bin/update-hadoop-config.sh resources/Datasources/information-schema/hbase.xml",
+           "dest": ""
+        },
+        {
+           "mode": "restart-drill"
+        },
+        {
+           "mode": "gen",
+           "src": "bin/execHBase.sh resources/Datasources/information-schema/hbase.ddl",
+           "dest": ""
+        }
+    ]
+}

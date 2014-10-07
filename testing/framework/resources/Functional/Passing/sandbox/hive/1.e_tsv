@@ -1,0 +1,6 @@
+order_id	BIGINT	YES	
+month	VARCHAR	YES	
+cust_id	BIGINT	YES	
+state	VARCHAR	YES	
+prod_id	BIGINT	YES	
+order_total	INTEGER	YES	

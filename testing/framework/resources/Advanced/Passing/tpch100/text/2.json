@@ -1,0 +1,21 @@
+{
+    "testId": "tpch",
+    "type": "group",
+    "description": "Test tpch queries via jdbc",
+    "categories": [
+        "smoke"
+    ],
+    "matrices": [
+        {
+            "query-file": ".*02.q",
+            "schema": "dfs.drillTestDirTpch100Text",
+            "output-format": "tsv",
+            "expected-file": ".*02.e_tsv",
+            "verification-type": [
+                "in-memory"
+            ]
+        }
+    ],
+    "datasources": [
+    ]
+}

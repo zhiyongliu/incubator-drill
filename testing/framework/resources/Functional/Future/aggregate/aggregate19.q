@@ -1,0 +1,1 @@
+select max(distinct(c_int)), max(distinct(c_bigint)), max(distinct(c_float4)), max(distinct(c_float8)), max(distinct(cast(c_float4 as decimal(9,3)))), max(distinct(cast(c_decimal9 as decimal(28,9)))), max(distinct(cast(c_decimal18 as decimal(38,18)))) from data where c_row <> 5 and c_row <> 14 and c_row <> 19 group by c_int;
