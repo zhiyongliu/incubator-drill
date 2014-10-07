@@ -153,8 +153,9 @@ public class JsonTestDataProcessor {
     for (int i = 0; i < jsonArray.length(); i++) {
       JSONObject item = (JSONObject) jsonArray.get(i);
       list.add(new TestCaseModeler().new DataSource(item.getString("mode"),
-          Utils.toResovedPath(item.getString("src"), "DRILL_TEST_DATA_DIR"),
-          item.getString("dest") == null ? "" : Utils.toResovedPath(
+          !item.has("src") ? "" : Utils.toResovedPath(item.getString("src"),
+              "DRILL_TEST_DATA_DIR"), !item.has("dest")
+              || item.getString("dest") == null ? "" : Utils.toResovedPath(
               item.getString("dest"), "DRILL_TESTDATA")));
     }
     return list;
@@ -174,7 +175,8 @@ public class JsonTestDataProcessor {
    * Constructs a TestCaseModeler object.
    * 
    * @param matrices
-   *          list of {@link TestCaseModeler.TestMatrix} used in the construction.
+   *          list of {@link TestCaseModeler.TestMatrix} used in the
+   *          construction.
    * @return a {@link TestCaseModeler} object.
    * @throws JSONException
    */

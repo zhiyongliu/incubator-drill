@@ -17,6 +17,7 @@
  */
 package org.apache.drill.test.framework;
 
+import java.util.Arrays;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -63,7 +64,9 @@ public class DrillTestBase {
       .get("DRILL_HOME") + "/bin/sqlline";
   private static final String SUBMIT_PLAN_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/submit_plan";
-  String drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
+  private String drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
+  private String restartDrillScript = drillProperties
+      .get("RESTART_DRILL_SCRIPT");
   private Connection connection = null;
   private Statement statement = null;
   private ResultSet resultSet = null;
@@ -72,7 +75,6 @@ public class DrillTestBase {
   private static String summaryPassing = "\nPassing Tests:\n==============\n";
   private static String summaryFailed = "\nFailed Tests:\n=============\n";
   private String optionFile = null;
-  private boolean restartDrillBit = false;
   private static long executionTime = QuerySubmitter.TIMEOUT_SECONDS;
   private static Map<String, Boolean> queryStatusMap = new HashMap<String, Boolean>();
   private static Map<String, Boolean> expectedStatusMap = new HashMap<String, Boolean>();
@@ -88,12 +90,6 @@ public class DrillTestBase {
     Class.forName("org.apache.drill.jdbc.Driver");
     try {
       optionFile = System.getProperty("option.file");
-    } catch (Exception e) {
-      LOG.debug("No option file provided.");
-    }
-    try {
-      restartDrillBit = Boolean.parseBoolean(System
-          .getProperty("restart_between_query"));
     } catch (Exception e) {
       LOG.debug("No option file provided.");
     }
@@ -149,17 +145,6 @@ public class DrillTestBase {
     }
   }
 
-  private void restartDrillBit() throws Exception {
-    final String restartScript = "resources/bin/drill-restart.sh";
-    if (!new File(restartScript).exists()) {
-      return;
-    }
-    String[] command = { "/bin/bash", restartScript };
-    LOG.info("Restarting drillbits using \"" + restartScript + "\"");
-    ProcessBuilder pb = new ProcessBuilder(command);
-    pb.start().waitFor();
-  }
-
   /**
    * Processes TestCaseModeler and passes information contained therein for test
    * execution.
@@ -170,9 +155,6 @@ public class DrillTestBase {
    */
   protected void runTest(TestCaseModeler modeler) throws Exception {
     TestVerifier.testStatus = TestVerifier.TEST_STATUS.PASS;
-    if (restartDrillBit) {
-      restartDrillBit();
-    }
     List<TestCaseModeler.TestMatrix> matrices = modeler.getMatrices();
     String[] inputFileNames = new String[matrices.size()];
     String[] schemas = new String[matrices.size()];
@@ -195,7 +177,7 @@ public class DrillTestBase {
     for (TestCaseModeler.TestMatrix matrix : matrices) {
       String schema = matrix.getSchema();
       String url = "";
-      if (!connectionMap.containsKey(schema) || restartDrillBit) {
+      if (!connectionMap.containsKey(schema)) {
         url = "jdbc:drill:schema=" + schema + ";zk="
             + Utils.getDrillTestProperties().get("ZOOKEEPERS");
         LOG.debug("Connecting to " + url);
@@ -232,18 +214,24 @@ public class DrillTestBase {
       String mode = datasource.getMode();
       if (mode.equals("cp")) {
         hdfsCopy(datasource.getSource(), datasource.getDestination(), false);
-      } else if (mode.equals("gen")) {
+      } else {
         int exitCode = 0;
+        String command = new String();
+        if (mode.equals("gen")) {
+          command = datasource.getSource();
+        } else if (mode.equals("restart-drill")) {
+          command = "/bin/bash " + restartDrillScript;
+          connectionMap.clear();
+        }
         try {
-          exitCode = Runtime.getRuntime().exec(datasource.getSource())
-              .waitFor();
-        } catch (Exception e) {
+          exitCode = Runtime.getRuntime().exec(command).waitFor();
+              } catch (Exception e) {
           LOG.error("Error: Failed to execute the command "
-              + datasource.getSource() + ".");
+              + command + ".");
         }
         if (exitCode != 0) {
           throw new RuntimeException("Error executing the command "
-              + datasource.getSource() + " has return code " + exitCode);
+              + command + " has return code " + exitCode);
         }
       }
     }

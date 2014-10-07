@@ -1,0 +1,2 @@
+DRILL	hbase	hbase-students	TABLE
+DRILL	hbase	hbase-employee	TABLE
