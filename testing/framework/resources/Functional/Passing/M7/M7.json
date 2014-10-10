@@ -19,19 +19,19 @@
     "datasources": [
        {
            "mode": "cp",
-           "src": "Datasources/M7/studenttab",
-           "dest": "/drill/testdata/M7"
+           "src": "Datasources/M7/votertab",
+           "dest": "/drill/testdata/M7/votertab"
        },
        {
            "mode": "cp",
-           "src": "Datasources/M7/votertab",
-           "dest": "/drill/testdata/M7"
+           "src": "Datasources/M7/studenttab",
+           "dest": "/drill/testdata/M7/studenttab"
        },
        {
 
             "mode": "gen",
             "src": "Datasources/M7/M7.sh",
             "dest": ""
-       }                                             
-   ] 
+       }
+   ]
 }

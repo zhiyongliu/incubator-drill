@@ -11,6 +11,7 @@ echo $OUT
 if [ $OUT -eq 0 ]; then
     hadoop fs -ls /sandbox/data
 else
+    hadoop fs -mkdir /sandbox
     hadoop fs -mkdir /sandbox/data
     hadoop fs -copyFromLocal resources/Datasources/sandbox/data/* /sandbox/data
 fi

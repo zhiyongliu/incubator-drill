@@ -1,5 +1,5 @@
 #!/bin/bash
-/opt/mapr/hbase/hbase-0.94.17/bin/hbase shell << EOF
+/opt/mapr/hbase/hbase-0.94.21/bin/hbase shell << EOF
 disable 'student'
 drop 'student'
 disable 'voter'
