@@ -67,7 +67,7 @@ public class ColumnList {
   public static List<Object> getTypes() {
     return types;
   }
-  
+
   public List<Object> getList() {
     return list;
   }
@@ -116,9 +116,10 @@ public class ColumnList {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    for (Object o : list) {
-      sb.append(o + "\t");
+    for (int i = 0; i < list.size() - 1; i++) {
+      sb.append(list.get(i) + "\t");
     }
+    sb.append(list.get(list.size() - 1));
     return sb.toString();
   }
 
@@ -147,8 +148,7 @@ public class ColumnList {
           double d1 = (Double) list1.get(i);
           double d2 = (Double) list2.get(i);
           if ((d1 + d2) / 2 != 0) {
-            result = result
-                && Math.abs(d1 - d2) / ((d1 + d2) / 2) < 1.0E-12;
+            result = result && Math.abs(d1 - d2) / ((d1 + d2) / 2) < 1.0E-12;
           } else if (d1 != 0) {
             result = false;
           }

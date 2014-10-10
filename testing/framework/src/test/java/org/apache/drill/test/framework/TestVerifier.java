@@ -18,7 +18,10 @@
 package org.apache.drill.test.framework;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Types;
@@ -48,6 +51,43 @@ public class TestVerifier {
   public enum TEST_STATUS {
     PASS, EXECUTION_FAILURE, VERIFICATION_FAILURE, ORDER_MISMATCH, TIMEOUT, UNASSIGNED
   };
+
+  /**
+   * Verifies query output from sqlline execution.
+   * 
+   * @param expectedOutput name of expected file
+   * @param actualOutput name of actual output file
+   * @param verifyOrderBy if query involves order-by
+   * @return {@link TEST_STATUS}
+   * @throws Exception
+   */
+  public static TEST_STATUS verifySqllineResult(String expectedOutput,
+      String actualOutput, boolean verifyOrderBy) throws Exception {
+    String cleanedUpFile = cleanUpSqllineOutputFile(actualOutput);
+    return verifyResultSet(expectedOutput, cleanedUpFile, verifyOrderBy);
+  }
+  
+  private static String cleanUpSqllineOutputFile(String actualOutput) throws Exception {
+    String cleanedUpFile = actualOutput + "_cleaned";
+    BufferedReader reader = new BufferedReader(new FileReader(new File(actualOutput)));
+    BufferedWriter writer = new BufferedWriter(new FileWriter(new File(cleanedUpFile)));
+    String line = "";
+    boolean headerFound = false;
+    while ((line = reader.readLine()) != null) {
+      if (!line.contains("\t")) {
+        continue;
+      }
+      if (!headerFound) {
+        headerFound = true;
+        continue;
+      }
+      line = line.replaceAll("'", "");
+      writer.write(line + "\n");
+    }
+    reader.close();
+    writer.close();
+    return cleanedUpFile;
+  }
 
   /**
    * Verifies output of a query. The verification is performed by comparing the

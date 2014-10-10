@@ -23,11 +23,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -49,7 +47,10 @@ public class QuerySubmitter {
       .getDrillTestProperties();
   public static final long TIMEOUT_SECONDS = Integer.parseInt(drillProperties
       .get("TIME_OUT_SECONDS"));
+  private static final String SQLLINE_COMMAND = drillProperties
+      .get("DRILL_HOME") + "/bin/sqlline -n admin -p admin -u jdbc:drill:";
   private List<String> columnLabels = null;
+  public static final String CONGREGATED_FILENAME = "/tmp/congregated.q";
 
   /**
    * Constructor with the schema name
@@ -69,92 +70,15 @@ public class QuerySubmitter {
    * @throws IOException
    * @throws InterruptedException
    */
-  public void submitQueriesSqlline(String sqllineCommand, String queryFileName,
-      long timeout) throws IOException, InterruptedException {
-    // TODO: need to parameterize the command line; need to finalize
-    // treatment of schemas
-    String command = sqllineCommand
-        + " -n admin -p admin -u jdbc:drill:schema=" + schema + " -f "
-        + queryFileName;
+  public void submitQueriesSqlline(String inputFileName, Statement statement,
+      long timeout) throws Exception {
+    submitQueryJDBC(Utils.getSqlStatements(inputFileName)[0], statement,
+        "/tmp/out", timeout);
+    String command = SQLLINE_COMMAND + "schema=" + schema + " -f "
+        + CONGREGATED_FILENAME;
     LOG.debug("Executing " + command + ".");
     RunThread runThread = new RunThread(command);
     processThread(runThread, timeout);
-  }
-
-  /**
-   * Executes a JDBC Query and iterates through the resultSet
-   * 
-   * @param query
-   * @param queryFileName
-   * @param statement
-   * @return
-   */
-  public boolean executeQueryJDBC(String query, String queryFileName,
-      Statement statement) throws Exception {
-    boolean status = true;
-    ResultSet resultSet = null;
-    long startTime = 0l;
-    long connTime = Long.MIN_VALUE;
-    long executeTime = Long.MIN_VALUE;
-    long firstRowFetchTime = Long.MIN_VALUE;
-    long endTime = Long.MIN_VALUE;
-    long lastRowFetchTime = Long.MIN_VALUE;
-    long rowCount = 0l;
-    int columnCount = 0;
-    try {
-      LOG.info("Extracted Query from : " + queryFileName);
-      String basicFileName = (new File(queryFileName)).getName();
-      String queryLabel = basicFileName.subSequence(0,
-          basicFileName.lastIndexOf(".q")).toString();
-      LOG.info("Executing Query : " + queryLabel);
-      startTime = System.currentTimeMillis();
-      // Time to Connect
-      connTime = System.currentTimeMillis();
-      LOG.info("Connect Time: " + ((connTime - startTime) / 1000f) + " sec");
-      RunThread runThread = new RunThread(statement, query);
-      boolean success = processThread(runThread);
-      if (!success) {
-        return false;
-      }
-      resultSet = runThread.getResultSet();
-      // Time to Execute
-      executeTime = System.currentTimeMillis();
-      LOG.info("Execute Time: " + ((executeTime - connTime) / 1000f) + " sec");
-      columnCount = resultSet.getMetaData().getColumnCount();
-      while (resultSet.next()) {
-        if (rowCount == 0)
-          firstRowFetchTime = System.currentTimeMillis();
-        rowCount++;
-        lastRowFetchTime = System.currentTimeMillis();
-      }
-    } catch (SQLException e) {
-      e.printStackTrace();
-      LOG.error(e.getMessage());
-      status = false;
-    } finally {
-      endTime = System.currentTimeMillis();
-      try {
-        LOG.info("Closing connections");
-        if (resultSet != null) {
-          resultSet.close();
-        }
-      } catch (SQLException e) {
-        LOG.error("[ERROR] During close: " + e.getMessage());
-        status = false;
-      }
-      if (!status)
-        LOG.error("Last row was fetched at " + new Date(lastRowFetchTime)
-            + " [" + ((endTime - lastRowFetchTime) / 1000f) + " secs ago]");
-      LOG.info("Time to fetch 1st row : "
-          + ((firstRowFetchTime - executeTime) / 1000f) + " sec");
-      LOG.info("Fetched " + rowCount + " rows with " + columnCount
-          + " columns in " + ((endTime - executeTime) / 1000f) + " sec");
-      LOG.info("Fetch Rate: " + (rowCount * 1000f / (endTime - executeTime))
-          + " rows/sec ");
-    }
-    LOG.info("Total Time: " + (System.currentTimeMillis() - startTime) / 1000f
-        + " sec ");
-    return status;
   }
 
   /**
@@ -263,10 +187,6 @@ public class QuerySubmitter {
    */
   public void submitQueryJDBC(String query, Statement statement,
       String outputFilename, long timeout) throws Exception {
-    BufferedWriter writer = null;
-    if (outputFilename != null) {
-      writer = new BufferedWriter(new FileWriter(new File(outputFilename)));
-    }
     ResultSet resultSet = null;
     try {
       RunThread runThread = new RunThread(statement, query);
@@ -290,6 +210,8 @@ public class QuerySubmitter {
       ColumnList.setTypes(types);
       LOG.debug("Result set data types:");
       LOG.debug(Utils.getTypesInStrings(ColumnList.getTypes()));
+      BufferedWriter writer = new BufferedWriter(new FileWriter(new File(
+          outputFilename)));
       while (resultSet.next()) {
         Object[] values = new Object[columnCount];
         for (int i = 1; i <= columnCount; i++) {
@@ -320,11 +242,6 @@ public class QuerySubmitter {
         resultSet.close();
       }
     }
-  }
-
-  private boolean processThread(RunThread runThread)
-      throws InterruptedException {
-    return processThread(runThread, TIMEOUT_SECONDS);
   }
 
   private boolean processThread(RunThread runThread, long timeout)

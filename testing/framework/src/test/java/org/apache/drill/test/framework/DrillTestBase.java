@@ -17,7 +17,6 @@
  */
 package org.apache.drill.test.framework;
 
-import java.util.Arrays;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
@@ -55,13 +54,10 @@ public class DrillTestBase {
       .getInvokingClassName());
   private QuerySubmitter submitter = null;
   protected InputQueryFileHandler handler = null;
-  private static final String CONGREGATED_FILENAME = "/tmp/congregated.q";
   private DateFormat dateFormat = new SimpleDateFormat(
       "yyyy/MM/dd HH:mm:ss.ssss");
   protected static Map<String, String> drillProperties = Utils
       .getDrillTestProperties();
-  private static final String SQLLINE_COMMAND = drillProperties
-      .get("DRILL_HOME") + "/bin/sqlline";
   private static final String SUBMIT_PLAN_COMMAND = drillProperties
       .get("DRILL_HOME") + "/bin/submit_plan";
   private String drillOutputDirName = drillProperties.get("DRILL_OUTPUT_DIR");
@@ -87,6 +83,9 @@ public class DrillTestBase {
   @BeforeClass
   public void beforeClass() throws SQLException, ClassNotFoundException,
       IOException {
+    if (!new File(drillOutputDirName).exists()) {
+      new File(drillOutputDirName).mkdir();
+    }
     Class.forName("org.apache.drill.jdbc.Driver");
     try {
       optionFile = System.getProperty("option.file");
@@ -216,7 +215,7 @@ public class DrillTestBase {
         hdfsCopy(datasource.getSource(), datasource.getDestination(), false);
       } else {
         int exitCode = 0;
-        String command = new String();
+        String command = "";
         if (mode.equals("gen")) {
           command = datasource.getSource();
         } else if (mode.equals("restart-drill")) {
@@ -225,13 +224,12 @@ public class DrillTestBase {
         }
         try {
           exitCode = Runtime.getRuntime().exec(command).waitFor();
-              } catch (Exception e) {
-          LOG.error("Error: Failed to execute the command "
-              + command + ".");
+        } catch (Exception e) {
+          LOG.error("Error: Failed to execute the command " + command + ".");
         }
         if (exitCode != 0) {
-          throw new RuntimeException("Error executing the command "
-              + command + " has return code " + exitCode);
+          throw new RuntimeException("Error executing the command " + command
+              + " has return code " + exitCode);
         }
       }
     }
@@ -261,10 +259,9 @@ public class DrillTestBase {
     }
     submitter = new QuerySubmitter(schemas[0]);
     if (submitType.equals("sqlline")) {
-      String queries = handler.congregateFiles(CONGREGATED_FILENAME);
+      String queries = handler.congregateFiles();
       LOG.info("Submitting queries:\n" + queries);
-      submitter.submitQueriesSqlline(SQLLINE_COMMAND, CONGREGATED_FILENAME,
-          executionTime);
+      submitter.submitQueriesSqlline(inputFileNames[0], statement, executionTime);
     } else {
       for (int i = 0; i < inputFileNames.length; i++) {
         if (submitType.equals("submit_plan")) {
@@ -275,39 +272,32 @@ public class DrillTestBase {
           int mid = queryStrings.length / 2;
           for (int j = 0; j < queryStrings.length; j++) {
             String queryString = queryStrings[j];
-            if (verificationTypes[i] == null
-                || verificationTypes[i].equalsIgnoreCase("none")) {
-              submitter.executeQueryJDBC(queryString, inputFileNames[i],
-                  statement);
-            } else {
-              LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
-              if (j != mid) {
-                submitter
-                    .submitQueryJDBC(queryString, statement, executionTime);
+            LOG.info(inputFileNames[i] + " :\n" + queryString + "\n");
+            if (j != mid) {
+              submitter.submitQueryJDBC(queryString, statement, executionTime);
+              continue;
+            }
+            if (submitType.equals("jdbc")) {
+              query = inputFileNames[i];
+              try {
+                submitter.submitQueryJDBC(queryString, statement,
+                    outputFileNames[i], executionTime);
+                areOrderByQueries[i] = isOrderByQuery(queryString);
+                if (areOrderByQueries[i]) {
+                  allOrderByColumns.add(getOrderByColumns(queryString,
+                      submitter.getColumnLabels()));
+                } else {
+                  allOrderByColumns.add(null);
+                }
+                allColumnLabels.add(submitter.getColumnLabels());
+                submitter.generatePlan(statement, planFileNames[i],
+                    queryString, "physical", executionTime);
+              } catch (Exception e) {
                 continue;
               }
-              if (submitType.equals("jdbc")) {
-                query = inputFileNames[i];
-                try {
-                  submitter.submitQueryJDBC(queryString, statement,
-                      outputFileNames[i], executionTime);
-                  areOrderByQueries[i] = isOrderByQuery(queryString);
-                  if (areOrderByQueries[i]) {
-                    allOrderByColumns.add(getOrderByColumns(queryString,
-                        submitter.getColumnLabels()));
-                  } else {
-                    allOrderByColumns.add(null);
-                  }
-                  allColumnLabels.add(submitter.getColumnLabels());
-                  submitter.generatePlan(statement, planFileNames[i],
-                      queryString, "physical", executionTime);
-                } catch (Exception e) {
-                  continue;
-                }
-              } else {
-                submitter.generatePlan(statement, inputFileNames[i],
-                    queryString, submitType, executionTime);
-              }
+            } else {
+              submitter.generatePlan(statement, inputFileNames[i], queryString,
+                  submitType, executionTime);
             }
           }
         }
@@ -332,7 +322,8 @@ public class DrillTestBase {
       return;
     }
     if (submitType.equals("sqlline")) {
-      TestVerifier.testStatus = TestVerifier.TEST_STATUS.PASS;
+      TestVerifier.testStatus = TestVerifier.verifySqllineResult(
+          expectedFiles[0], outputFileNames[0], false);
     } else if (submitType.equals("submit_plan")) {
       verifyAllOutputs(expectedFiles, outputFileNames);
     } else if (submitType.equals("jdbc")) {
@@ -396,7 +387,8 @@ public class DrillTestBase {
       if (isPlan) {
         outputFileNames[i] += ".plan";
       } else {
-        outputFileNames[i] += ".output_" + new Date().toString();
+        outputFileNames[i] += ".output_"
+            + new Date().toString().replace(' ', '_');
       }
     }
     return outputFileNames;

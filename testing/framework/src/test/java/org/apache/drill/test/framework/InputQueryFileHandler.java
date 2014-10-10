@@ -123,23 +123,22 @@ public class InputQueryFileHandler {
    * files. It also adds flags to capture sqlline command line output and any
    * other sqlline commands needed.
    * 
-   * @param congregatedFileName
-   *          name of the resulting file
    * @return
    * @throws IOException
    */
-  public String congregateFiles(String congregatedFileName) throws IOException {
+  public String congregateFiles() throws IOException {
     if (inputFileNames.length != outputFileNames.length
         || (outputFormats != null && inputFileNames.length != outputFormats.length)) {
       throw new IllegalArgumentException(
           "Numbers of input files, output files and formats should be equal.");
     }
-    File file = new File(congregatedFileName);
+    File file = new File(QuerySubmitter.CONGREGATED_FILENAME);
     StringBuilder builder = new StringBuilder();
     BufferedWriter writer = new BufferedWriter(new FileWriter(file));
     headSizes = new int[inputFileNames.length];
     for (int i = 0; i < inputFileNames.length; i++) {
-      writer.write("!record " + outputFileNames[i] + "\n");
+      String outputFileName = outputFileNames[i];
+      writer.write("!record " + outputFileName + "\n");
       headSizes[i]++;
       if (outputFormats != null && outputFormats[i] != null) {
         writer.write("!outputformat " + outputFormats[i] + "\n");
